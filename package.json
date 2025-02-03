@@ -10,10 +10,13 @@
   },
   "dependencies": {
     "firebase": "^11.2.0",
+    "firebase-extensions": "^0.0.1-security",
+    "firebase-tools": "^13.29.3",
     "next": "15.1.6",
     "openai": "^4.82.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "stripe": "^17.6.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
