@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { auth, db } from "../../../../lib/firebase";
-import { getRandomPersona } from "../../../../lib/persona";
+import { getRandomPersonaWithBig5 } from "../../../../lib/persona";
 import { exportResponsesToExcel } from "../../../../lib/export";
 import Link from "next/link";
 
@@ -77,90 +77,116 @@ setPersonas(fetchedPersonas);
   }, [id]);
 
 
-const handleGenerateResponses = async () => {
-  if (!survey) return;
-  setGenerating(true);
-
-  const user = auth.currentUser;
-  if (!user) {
-    alert("You must be logged in to generate AI responses.");
-    setGenerating(false);
-    return;
-  }
-  const generatedPersonas = Array.from({ length: numRespondents }, () => getRandomPersona());
-
-  const newResponses: Record<number, Record<string, string>> = {};
-  const newPersonas: { [key: string]: any } = {}; // ✅ Store personas
-
-  for (let i = 0; i < numRespondents; i++) {
-    const persona = generatedPersonas[i];
-    newPersonas[i] = persona; // ✅ Save persona info
+  const handleGenerateResponses = async () => {
+    if (!survey) return;
+    setGenerating(true);
   
-    for (const question of survey.questions) {
-      try {
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            persona,
-            question: question.text,
-            instructions: `You are acting as a survey respondent with the following demographic characteristics:
-- Age: ${persona.age}
-- Gender: ${persona.gender}
-- Race/Ethnicity: ${persona.race}
-- Income Level: ${persona.income}
-
-Answer the following survey question *as a person of this background would*. Provide a natural, realistic response that reflects this demographic’s typical perspectives, interests, or concerns.
-
-Survey Question: "${question.text}"
-Question Type: ${question.type}
-
-${question.type === "multiple choice" ? `Available Options: ${question.options?.join(", ")}` : ""}
-
-If the question is multiple choice, just provide VERBATIM ONE of the available options that matchest mostly with your character.`,
-          }),
-        });
-
-        const data = await response.json();
-        if (data.answer) {
-          if (!newResponses[i]) newResponses[i] = {};
-newResponses[i][question.text] = data.answer;
-
-// ✅ Update state one response at a time
-setResponses((prevResponses) => ({
-  ...prevResponses,
-  [i]: {
-    ...prevResponses[i],
-    [question.text]: data.answer,
-  },
-}));
-
-// ✅ Save the persona used for this response
-newPersonas[question.text] = { ...persona }; // ✅ Ensure correct type
-
-          // ✅ Store responses in Firestore
-          const surveyRef = doc(db, "surveys", id as string);
-          const responsesCollection = collection(surveyRef, "responses");
-          const responseDocRef = doc(responsesCollection);
-
-          await setDoc(responseDocRef, {
-            question: question.text,
-            response: data.answer,
-            generatedAt: new Date(),
-            persona,
-            createdBy: user.uid,
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to generate AI responses.");
+      setGenerating(false);
+      return;
+    }
+  
+    // 1) Generate random personas with Big Five extremes
+    const generatedPersonas = Array.from({ length: numRespondents }, () =>
+      getRandomPersonaWithBig5()
+    );
+  
+    const newResponses: Record<number, Record<string, string>> = {};
+    const newPersonas: { [key: string]: any } = {};
+  
+    for (let i = 0; i < numRespondents; i++) {
+      const persona = generatedPersonas[i];
+      // ✅ Store persona info for future use/export
+      newPersonas[i] = persona;
+  
+      // 2) Build a bullet list of personality extremes
+      const personalityBullets =
+        persona.personality?.extremeAnswers
+          ?.map((extreme: any) => {
+            // Determine "AGREE" vs. "DISAGREE"
+            const label = extreme.response === 5 ? "AGREE" : "DISAGREE";
+            return `- ${extreme.questionCode} ("${extreme.questionText}"): ${label}`;
+          })
+          .join("\n") || "No extreme traits found";
+  
+      // For each survey question, ask the LLM
+      for (const question of survey.questions) {
+        try {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              persona,
+              question: question.text,
+              instructions: `You are acting as a survey respondent with the following demographic characteristics:
+  - Age: ${persona.age}
+  - Gender: ${persona.gender}
+  - Race/Ethnicity: ${persona.race}
+  - Income Level: ${persona.income}
+  
+  Your personality test results indicate extremes in the following areas:
+  ${personalityBullets}
+  
+  Answer the following survey question *as a person with this demographic and personality profile would*. Provide a natural, realistic response that reflects this background's typical perspectives, interests, or concerns.
+  
+  Survey Question: "${question.text}"
+  Question Type: ${question.type}
+  
+  ${
+    question.type === "multiple choice"
+      ? `Available Options: ${question.options?.join(", ")}`
+      : ""
+  }
+  
+  If the question is multiple choice, just provide VERBATIM ONE of the available options that mostly matches your character.`,
+            }),
           });
+  
+          const data = await response.json();
+          if (data.answer) {
+            // 3) Save the LLM's answer in local state
+            if (!newResponses[i]) newResponses[i] = {};
+            newResponses[i][question.text] = data.answer;
+  
+            setResponses((prevResponses) => ({
+              ...prevResponses,
+              [i]: {
+                ...prevResponses[i],
+                [question.text]: data.answer,
+              },
+            }));
+  
+            // 4) Save the persona used for this response (optional)
+            //    Overwrites by question text — if you want per-respondent
+            //    you can skip or store differently.
+            newPersonas[question.text] = { ...persona };
+  
+            // 5) Store responses in Firestore
+            const surveyRef = doc(db, "surveys", id as string);
+            const responsesCollection = collection(surveyRef, "responses");
+            const responseDocRef = doc(responsesCollection);
+  
+            await setDoc(responseDocRef, {
+              question: question.text,
+              response: data.answer,
+              generatedAt: new Date(),
+              persona,
+              createdBy: user.uid,
+            });
+          }
+        } catch (error) {
+          console.error("🔥 Firestore Write Error:", error);
         }
-      } catch (error) {
-        console.error("🔥 Firestore Write Error:", error);
       }
     }
-  }
-
-  setResponses(newResponses);
-  setPersonas(newPersonas); // ✅ Save generated personas so they persist
-  setGenerating(false);
-};
+  
+    // Update state with all responses & personas
+    setResponses(newResponses);
+    setPersonas(newPersonas);
+    setGenerating(false);
+  };
 
   if (loading) {
     return <p className="p-8 text-black">Loading survey...</p>;

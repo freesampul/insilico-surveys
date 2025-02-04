@@ -2,24 +2,74 @@ import * as XLSX from "xlsx";
 
 export function exportResponsesToExcel(
   responses: Record<number, Record<string, string>>,
-  personas: Record<number, { age: string; gender: string; race: string; income: string }>
+  personas: Record<number, {
+    age: string;
+    gender: string;
+    race: string;
+    income: string;
+    personality?: {
+      extremeAnswers: Array<{
+        questionCode: string;
+        questionText: string;
+        response: number;
+      }>;
+    };
+  }>
 ) {
-  // ✅ Extract all question titles dynamically
-  const questions = Object.keys(responses[Object.keys(responses)[0] as unknown as number] || {});
+  // If there's at least one respondent, grab the question titles
+  const respondentIds = Object.keys(responses);
+  if (respondentIds.length === 0) {
+    alert("No responses to export.");
+    return;
+  }
 
-  // ✅ Define the header row
-  const headers = ["Age", "Gender", "Race/Ethnicity", "Income Level", ...questions];
+  // Dynamically gather question titles from the first respondent
+  const firstRespondentId = respondentIds[0] as unknown as number;
+  const questions = Object.keys(responses[firstRespondentId] || {});
 
-  // ✅ Format data for each respondent
-  const worksheetData = Object.entries(responses).map(([personaIdString, answers]) => {
-    const personaId = Number(personaIdString); // ✅ Ensure personaId is treated as a number
-    const persona = personas[personaId] || { age: "Unknown", gender: "Unknown", race: "Unknown", income: "Unknown" };
+  // 👉 Define the headers (including new "Personality Extremes")
+  const headers = [
+    "Age",
+    "Gender",
+    "Race/Ethnicity",
+    "Income Level",
+    "Personality Extremes", 
+    ...questions,
+  ];
 
+  // 👉 Build worksheet data
+  const worksheetData = respondentIds.map((personaIdString) => {
+    const personaId = Number(personaIdString);
+    const answers = responses[personaId] || {};
+    const persona = personas[personaId] || {
+      age: "Unknown",
+      gender: "Unknown",
+      race: "Unknown",
+      income: "Unknown",
+      personality: { extremeAnswers: [] },
+    };
+
+    // Convert the extremeAnswers array into a single string
+    let personalityString = "";
+    if (persona.personality?.extremeAnswers?.length) {
+      personalityString = persona.personality.extremeAnswers
+        .map(
+          (extreme) =>
+            `${extreme.questionCode}="${extreme.questionText}" (rating=${extreme.response})`
+        )
+        .join(" | ");
+    } else {
+      personalityString = "None";
+    }
+
+    // Return a row object with the header matching keys
     return {
       Age: persona.age,
       Gender: persona.gender,
       "Race/Ethnicity": persona.race,
       "Income Level": persona.income,
+      "Personality Extremes": personalityString,
+      // Merge in all question responses
       ...questions.reduce((acc, question) => {
         acc[question] = answers[question] || "No Response";
         return acc;
@@ -27,8 +77,8 @@ export function exportResponsesToExcel(
     };
   });
 
-  // ✅ Create and export the Excel file
-  const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+  // Create a worksheet from JSON
+  const worksheet = XLSX.utils.json_to_sheet(worksheetData, { header: headers });
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Survey Responses");
 
