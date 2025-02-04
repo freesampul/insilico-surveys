@@ -1,78 +1,97 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const functions = require('firebase-functions');
+const express = require('express');
+const cors = require('cors');
+const stripe = require('stripe')(functions.config().stripe.secret);
+const admin = require('firebase-admin');
 
-admin.initializeApp();
-const db = admin.firestore();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
-exports.handleStripeCheckoutCompleted = functions.https.onRequest(async (req, res) => {
-  const sig = req.headers["stripe-signature"];
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
 
+// Create checkout session endpoint
+app.post('/create-checkout-session', async (req, res) => {
   try {
-    const event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_KEY);
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [{
+        price: req.body.priceId,
+        quantity: 1,
+      }],
+      success_url: 'https://us-central1-sidehustles-ff134.cloudfunctions.net/handleStripeCheckoutCompleted',
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/tokens`,
+      metadata: {
+        userId: req.body.userId,
+      },
+    });
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const userId = session.client_reference_id; // Get the user's ID from the checkout session
-      const amountPaid = session.amount_total / 100; // Convert cents to dollars
-
-      let tokens = 0;
-      if (amountPaid >= 5) {
-        tokens = 100; // Example: 100 tokens for $5+
-      } else if (amountPaid >= 10) {
-        tokens = 250;
-      }
-
-      // Reference to user's document
-      const userDocRef = db.collection("users").doc(userId);
-      const userDoc = await userDocRef.get();
-
-      let currentTokens = 0;
-      if (userDoc.exists) {
-        currentTokens = userDoc.data().tokens || 0;
-      }
-
-      await userDocRef.set(
-        { tokens: currentTokens + tokens },
-        { merge: true }
-      );
-
-      console.log(`Updated tokens for user ${userId} to ${currentTokens + tokens}`);
-    }
-
-    res.status(200).send("Webhook received successfully");
-  } catch (err) {
-    console.error("Error handling webhook:", err.message);
-    res.status(400).send("Webhook Error: " + err.message);
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
-    }
-  
-    const userId = context.auth.uid;
-    const priceId = data.priceId; // Stripe price ID from your dashboard
-  
+// Webhook endpoint
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const userId = session.metadata.userId;
+
     try {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        mode: "payment",
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: `${data.successUrl}`,
-        cancel_url: `${data.cancelUrl}`,
-        client_reference_id: userId, // Reference the user
+      // Add 100 tokens to user's balance
+      const userRef = admin.firestore().collection('users').doc(userId);
+      await admin.firestore().runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        const currentTokens = userDoc.exists ? (userDoc.data().tokens || 0) : 0;
+        transaction.set(userRef, { tokens: currentTokens + 100 }, { merge: true });
       });
-  
-      return { sessionId: session.id };
     } catch (error) {
-      console.error("Error creating checkout session:", error.message);
-      throw new functions.https.HttpsError("internal", error.message);
+      console.error('Error updating user tokens:', error);
+      return res.status(500).send('Error processing payment');
     }
-  });
+  }
+
+  res.json({ received: true });
+});
+
+// Separate function for handling checkout completion
+exports.handleStripeCheckoutCompleted = functions.https.onRequest(async (req, res) => {
+  const session = req.body;
+  const userId = session.metadata.userId;
+
+  try {
+    // Add 100 tokens to user's balance
+    const userRef = admin.firestore().collection('users').doc(userId);
+    await admin.firestore().runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      const currentTokens = userDoc.exists ? (userDoc.data().tokens || 0) : 0;
+      transaction.set(userRef, { tokens: currentTokens + 100 }, { merge: true });
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating user tokens:', error);
+    res.status(500).json({ error: 'Error processing payment' });
+  }
+});
+
+// Export the Express app as Cloud Functions
+exports.api = functions.https.onRequest(app);

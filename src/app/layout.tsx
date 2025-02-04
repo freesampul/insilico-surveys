@@ -1,5 +1,5 @@
 // app/layout.tsx
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "@/app/context/AuthContext";
 import "./globals.css";
 
 export const metadata = {
