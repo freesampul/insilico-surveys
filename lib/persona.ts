@@ -1,7 +1,3 @@
-import fs from "fs";
-import path from "path";
-import { parse } from "fast-csv";
-
 export interface Persona {
   age: string;        // e.g. "18-24"
   gender: string;     // e.g. "Male"
@@ -121,22 +117,24 @@ function selectRandomGroup<T extends { percentage: number }>(groups: T[]): T {
 // ---------------------------------------------
 // 4) Load & parse big5.csv
 // ---------------------------------------------
-const big5Path = path.join(__dirname, "../../data/big5.csv");
+async function fetchBig5Data(): Promise<any[]> {
+  try {
+    const response = await fetch("/api/persona");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.statusText}`);
+    }
+    const data = await response.json();
+    console.log(data.slice(0, 5)); // Show first 5 rows for debugging
+    return data;
+  } catch (err) {
+    console.error("Error fetching big5.csv from API:", err);
+    return [];
+  }
+}
 
-const big5Data: any[] = [];
-
-fs.createReadStream(big5Path)
-  .pipe(parse({ headers: true }))
-  .on("data", (row) => {
-    big5Data.push(row);
-  })
-  .on("end", () => {
-    console.log("Finished parsing CSV.");
-    console.log(big5Data.slice(0, 5)); // Show first 5 rows for debugging
-  })
-  .on("error", (err) => {
-    console.error("Error reading big5.csv:", err);
-  });
+// Call this function wherever you need the data
+let big5Data: any[] = [];
+fetchBig5Data().then((data) => (big5Data = data));
 
 // ---------------------------------------------
 // 5) Map user-friendly race/gender to dataset codes
