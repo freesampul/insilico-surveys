@@ -93,6 +93,27 @@ export default function TokensPage() {
     }
   };
 
+  // Function to spend 50 tokens
+  const handleSpendTokens = async () => {
+    try {
+      if (tokens < 50) {
+        setError("You do not have enough tokens to spend.");
+        return;
+      }
+
+      const newTokens = tokens - 50;
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, { tokens: newTokens });
+
+      setTokens(newTokens);
+      console.log("✅ Successfully spent 50 tokens");
+
+    } catch (err) {
+      console.error("❌ Error spending tokens:", err);
+      setError("Failed to spend tokens. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <main className="p-8">
@@ -134,8 +155,8 @@ export default function TokensPage() {
         )}
       </div>
 
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h2 className="text-xl text-white mb-4">Purchase Tokens</h2>
+      <div className="bg-gray-800 rounded-lg p-6 mb-8">
+        <h2 className="text-xl text-white mb-2">Purchase Tokens</h2>
         <div className="flex flex-col space-y-4">
           <div className="p-4 border border-gray-700 rounded-lg">
             <h3 className="text-lg text-white mb-2">100 Tokens Package</h3>
@@ -145,6 +166,23 @@ export default function TokensPage() {
               className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
             >
               Buy for $1.00
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Spend Tokens Button */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h2 className="text-xl text-white mb-4">Spend Tokens</h2>
+        <div className="flex flex-col space-y-4">
+          <div className="p-4 border border-gray-700 rounded-lg">
+            <h3 className="text-lg text-white mb-2">Spend 50 Tokens</h3>
+            <p className="text-gray-400 mb-4">Spend 50 tokens to access premium features</p>
+            <button
+              onClick={handleSpendTokens}
+              className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Spend 50 Tokens
             </button>
           </div>
         </div>
