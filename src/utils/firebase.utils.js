@@ -1,9 +1,12 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
 
-/**
+export const auth = getAuth(); // Export auth instance
+export const db = getFirestore(); // Export Firestore instance
+
+
+/** 
  * ✅ Ensure a user's Firestore document exists and includes their email.
  */
 export const ensureUserDocExists = async (uid, email) => {
@@ -80,16 +83,12 @@ export const startCheckoutSession = async (priceId) => {
  */
 export const getUserTokens = async (uid) => {
   try {
-    console.log("📊 Fetching tokens for user:", uid);
     const userDocRef = doc(db, "users", uid);
     const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
-      const tokens = userSnap.data().tokens || 0;
-      console.log("📈 Current token count:", tokens);
-      return tokens;
+      return userSnap.data().tokens || 0;
     } else {
-      console.log("👤 New user, initializing tokens to 0");
       return 0;
     }
   } catch (error) {

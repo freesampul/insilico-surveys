@@ -3,42 +3,32 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { startCheckoutSession } from "@/utils/firebase.utils";
-import { getUserTokens, ensureUserDocExists } from "@/utils/firebase.utils";
+import { getUserTokens, ensureUserDocExists, db } from "@/utils/firebase.utils"; // ✅ Import `db`
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../../utils/firebase.utils";
-import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { auth } from "../../utils/firebase.utils";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function TokensPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth(); // Get user from context
   const [tokens, setTokens] = useState(0);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [username, setUsername] = useState(""); // Store username
   const [error, setError] = useState(null); // Store error state
 
   useEffect(() => {
-    const auth = getAuth();
-
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        console.log("🔐 Auth state changed:", authUser?.uid);
-        setAuthChecked(true); // ✅ Auth state checked
-
-        if (authUser) {
-          setUsername(authUser.displayName || authUser.email); // Store username
-          await ensureUserDocExists(authUser.uid, authUser.email); // Ensure Firestore doc exists
-          const userTokens = await getUserTokens(authUser.uid); // Fetch initial tokens
-          setTokens(userTokens); // Set tokens
+        if (firebaseUser) {
+          await ensureUserDocExists(firebaseUser.uid, firebaseUser.email); // Ensure Firestore doc exists
+          const userTokens = await getUserTokens(firebaseUser.uid); // Fetch initial tokens
+          setTokens(userTokens); // Update tokens
         } else {
-          console.log("🚫 No user found during auth state change.");
+          setTokens(0); // Reset tokens if no user
         }
       } catch (err) {
         console.error("❌ Error in auth state change logic:", err);
-        setError("Failed to fetch user data. Please try again.");
       } finally {
-        setLoading(false); // ✅ Stop loading regardless of success/failure
+        setLoading(false); // Stop loading regardless of success/failure
       }
     });
 
@@ -47,8 +37,8 @@ export default function TokensPage() {
 
   useEffect(() => {
     const updateTokensAfterPurchase = async () => {
-      if (!user || !authChecked) {
-        console.log("⏳ Waiting for auth state...", { user: !!user, authChecked });
+      if (!user) {
+        console.log("⏳ Waiting for user...");
         return;
       }
 
@@ -80,17 +70,14 @@ export default function TokensPage() {
           window.history.replaceState({}, "", "/tokens");
         } catch (err) {
           console.error("❌ Error updating tokens:", err);
-          setError("Failed to update tokens after purchase.");
         } finally {
           setUpdating(false);
         }
       }
     };
 
-    if (authChecked) {
-      updateTokensAfterPurchase();
-    }
-  }, [user, authChecked, updating]);
+    updateTokensAfterPurchase();
+  }, [user, updating]);
 
   const handleBuyTokens = async () => {
     try {
@@ -137,12 +124,6 @@ export default function TokensPage() {
         </div>
       )}
 
-      {/* Display the logged-in user's username */}
-      <div className="bg-gray-800 rounded-lg p-6 mb-8">
-        <h2 className="text-xl text-white mb-2">Logged in as</h2>
-        <p className="text-lg font-bold text-blue-400">{username}</p>
-      </div>
-
       {/* Display token balance */}
       <div className="bg-gray-800 rounded-lg p-6 mb-8">
         <h2 className="text-xl text-white mb-2">Your Balance</h2>
@@ -163,7 +144,7 @@ export default function TokensPage() {
               onClick={handleBuyTokens}
               className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
             >
-              Buy for $5.00
+              Buy for $1.00
             </button>
           </div>
         </div>
