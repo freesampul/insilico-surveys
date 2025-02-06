@@ -5,6 +5,10 @@ import { auth, db } from "../../../../lib/firebase";
 import { getRandomPersonaWithBig5 } from "../../../../lib/persona";
 import { exportResponsesToExcel, downloadCodebook } from "../../../../lib/export";
 import Link from "next/link";
+import { getUserTokens } from "@/utils/firebase.utils"
+import { updateDoc } from "firebase/firestore";
+import { useAuth } from "@/app/context/AuthContext";
+
 
 
 import { doc, getDoc, getDocs, collection, addDoc, writeBatch, setDoc } from "firebase/firestore";
@@ -12,13 +16,20 @@ import { useParams } from "next/navigation";
 
 
 export default function SurveyDetailPage() {
+  const { user, tokens, setTokens } = useAuth(); // Get the user and tokens from context
+
   const { id } = useParams();
+  const [tokenCost, setTokenCost] = useState(1);
   const [survey, setSurvey] = useState<any>(null);
   const [numRespondents, setNumRespondents] = useState(1);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [responses, setResponses] = useState<{ [key: number]: { [question: string]: string } }>({});
   const [personas, setPersonas] = useState<{ [key: string]: { age: string; gender: string; race: string; income: string } }>({});
+  useEffect(() => {
+    setTokenCost(numRespondents * 5);
+  }, [numRespondents]);
+
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +91,8 @@ setPersonas(fetchedPersonas);
   const handleGenerateResponses = async () => {
     if (!survey) return;
     setGenerating(true);
+
+    
   
     const user = auth.currentUser;
     if (!user) {
@@ -87,7 +100,18 @@ setPersonas(fetchedPersonas);
       setGenerating(false);
       return;
     }
+
+    const userTokens = await getUserTokens(user.uid);
+    if (userTokens < tokenCost) {
+      alert("You don't have enough tokens to generate responses."); // ✅ Show alert if not enough tokens
+      setGenerating(false);
+      return;
+    }
   
+    const newTokenCount = userTokens - tokenCost;
+    const userDocRef = doc(db, "users", user.uid);
+    await updateDoc(userDocRef, { tokens: newTokenCount }); 
+    
     interface Persona {
       age: string;
       gender: string;
@@ -211,6 +235,7 @@ setPersonas(fetchedPersonas);
         }
       }
     }
+
   
     setResponses(newResponses);
     setPersonas(newPersonas);
@@ -243,8 +268,12 @@ setPersonas(fetchedPersonas);
         {num}
       </option>
     ))}
+
           </select>
+          <p className="mt-4 text-lg">Total Token Cost: {tokenCost} tokens</p>
+          <p className="text-sm text-gray-400">You currently have {tokens} tokens</p>
 </label>
+
 
 
 
