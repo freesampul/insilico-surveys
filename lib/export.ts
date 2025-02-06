@@ -84,3 +84,32 @@ export function exportResponsesToExcel(
 
   XLSX.writeFile(workbook, "Survey_Responses.xlsx");
 }
+
+export const downloadCodebook = (survey: any) => {
+  if (!survey || !survey.questions) {
+    alert("Survey data is missing.");
+    return;
+  }
+
+  let codebookContent = `Survey Codebook: ${survey.title}\n\n`;
+  
+  survey.questions.forEach((q: any, index: number) => {
+    codebookContent += `Question ${index + 1}: ${q.text}\n`;
+    
+    if (q.type === "multiple choice" && Array.isArray(q.options)) {
+      q.options.forEach((option: string, idx: number) => {
+        codebookContent += `  ${idx + 1}. ${option}\n`;
+      });
+    }
+    
+    codebookContent += "\n";
+  });
+
+  const blob = new Blob([codebookContent], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${survey.title.replace(/\s+/g, "_")}_codebook.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

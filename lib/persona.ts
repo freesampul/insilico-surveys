@@ -202,9 +202,9 @@ export function getRandomPersonaWithBig5(): Persona {
   const incomeItem = selectRandomGroup(incomes);
 
   // Step 2: map demographics to big5 codes
-  const raceCodes = mapRaceLabelToCode(raceItem.race);
-  const genderCodes = mapGenderLabelToCode(genderItem.gender);
-  const [minAge, maxAge] = getAgeRangeBracket(ageItem.range);
+  const raceCodes: number[] = mapRaceLabelToCode(raceItem.race);
+  const genderCodes: number[] = mapGenderLabelToCode(genderItem.gender);
+  const [minAge, maxAge]: [number, number] = getAgeRangeBracket(ageItem.range);
 
   // Step 3: filter big5Data
   const filtered = big5Data.filter((row) => {
@@ -212,11 +212,13 @@ export function getRandomPersonaWithBig5(): Persona {
     const rowGender = parseInt(row.gender, 10);
     const rowAge = parseInt(row.age, 10);
 
-    if (!raceCodes.includes(rowRace)) return false;
-    if (!genderCodes.includes(rowGender)) return false;
-    if (isNaN(rowAge) || rowAge < minAge || rowAge > maxAge) return false;
-
-    return true;
+    return (
+      raceCodes.includes(rowRace) &&
+      genderCodes.includes(rowGender) &&
+      !isNaN(rowAge) &&
+      rowAge >= minAge &&
+      rowAge <= maxAge
+    );
   });
 
   // Fallback if no participants match
@@ -228,14 +230,18 @@ export function getRandomPersonaWithBig5(): Persona {
   // Step 5: gather all extremes
   const extremeAnswers = getAllExtremeAnswers(randomParticipant, questionTextMap);
 
-  // Build final persona
+  // **Fix:** Ensure the returned object fully conforms to `Persona`
   return {
-    age: ageItem.range,
-    gender: genderItem.gender,
-    race: raceItem.race,
-    income: incomeItem.range,
+    age: String(ageItem.range), // Ensuring it's a string
+    gender: String(genderItem.gender),
+    race: String(raceItem.race),
+    income: String(incomeItem.range),
     personality: {
-      extremeAnswers,
+      extremeAnswers: extremeAnswers.map((extreme) => ({
+        questionCode: String(extreme.questionCode),
+        questionText: String(extreme.questionText),
+        response: Number(extreme.response), // Ensuring number type
+      })),
     },
   };
 }

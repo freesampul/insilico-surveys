@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../../../../lib/firebase";
 import { getRandomPersonaWithBig5 } from "../../../../lib/persona";
-import { exportResponsesToExcel } from "../../../../lib/export";
+import { exportResponsesToExcel, downloadCodebook } from "../../../../lib/export";
 import Link from "next/link";
 
 
@@ -88,32 +88,60 @@ setPersonas(fetchedPersonas);
       return;
     }
   
-    // 1) Generate random personas with Big Five extremes
-    const generatedPersonas = Array.from({ length: numRespondents }, () =>
+    interface Persona {
+      age: string;
+      gender: string;
+      race: string;
+      income: string;
+      personality: {
+        extremeAnswers: { questionCode: string; questionText: string; response: number }[];
+      };
+    }
+  
+    interface SurveyQuestion {
+      text: string;
+      type: string;
+      options?: string[];
+    }
+  
+    interface ResponseHistoryItem {
+      question: string;
+      answer: string;
+    }
+  
+    type Responses = Record<number, Record<string, string>>;
+    type Personas = Record<number, Persona>;
+  
+    const generatedPersonas: Persona[] = Array.from({ length: numRespondents }, () =>
       getRandomPersonaWithBig5()
     );
-  
-    const newResponses: Record<number, Record<string, string>> = {};
-    const newPersonas: { [key: string]: any } = {};
+
+    const newResponses: Responses = {};
+    const newPersonas: Personas = {};
+    const responseHistory: Record<number, ResponseHistoryItem[]> = {}; // Store response history
   
     for (let i = 0; i < numRespondents; i++) {
       const persona = generatedPersonas[i];
-      // ✅ Store persona info for future use/export
       newPersonas[i] = persona;
+      responseHistory[i] = []; // Initialize history for this persona
   
-      // 2) Build a bullet list of personality extremes
-      const personalityBullets =
+      const personalityBullets: string =
         persona.personality?.extremeAnswers
-          ?.map((extreme: any) => {
-            // Determine "AGREE" vs. "DISAGREE"
+          ?.map((extreme) => {
             const label = extreme.response === 5 ? "AGREE" : "DISAGREE";
             return `- ${extreme.questionCode} ("${extreme.questionText}"): ${label}`;
           })
           .join("\n") || "No extreme traits found";
   
-      // For each survey question, ask the LLM
-      for (const question of survey.questions) {
+      for (const question of survey.questions as SurveyQuestion[]) {
         try {
+          const pastResponsesText: string =
+            responseHistory[i].length > 0
+              ? `Previously, you answered the following questions as this persona:\n${responseHistory[i]
+                  .map((resp) => `- Q: "${resp.question}" A: "${resp.answer}"`)
+                  .join("\n")}\n\n`
+              : "";
+  
           const response = await fetch("/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -129,24 +157,25 @@ setPersonas(fetchedPersonas);
   Your personality test results indicate extremes in the following areas:
   ${personalityBullets}
   
-  Answer the following survey question *as a person with this demographic and personality profile would*. Provide a natural, realistic response that reflects this background's typical perspectives, interests, or concerns.
+  ${pastResponsesText}Answer the following survey question as a person with this demographic and personality profile would. It is March 2025. Provide a natural, realistic, and curt response that reflects this background's typical perspectives, interests, or concerns.
   
   Survey Question: "${question.text}"
   Question Type: ${question.type}
   
   ${
-    question.type === "multiple choice"
-      ? `Available Options: ${question.options?.join(", ")}`
+    question.type === "multiple choice" && Array.isArray(question.options)
+      ? `Available Options:\n${question.options
+          .map((option, index) => `${index + 1}. ${option}`)
+          .join("\n")}`
       : ""
   }
   
-  If the question is multiple choice, just provide VERBATIM ONE of the available options that mostly matches your character.`,
+  If the question is multiple choice, please print exactly and only one number- (1, 2, 3, etc.), that corresponds to the option you choose.`,
             }),
           });
   
           const data = await response.json();
           if (data.answer) {
-            // 3) Save the LLM's answer in local state
             if (!newResponses[i]) newResponses[i] = {};
             newResponses[i][question.text] = data.answer;
   
@@ -158,12 +187,13 @@ setPersonas(fetchedPersonas);
               },
             }));
   
-            // 4) Save the persona used for this response (optional)
-            //    Overwrites by question text — if you want per-respondent
-            //    you can skip or store differently.
-            newPersonas[question.text] = { ...persona };
+            // Store response history for context in future responses
+            responseHistory[i].push({
+              question: question.text,
+              answer: data.answer,
+            });
   
-            // 5) Store responses in Firestore
+            // Store responses in Firestore
             const surveyRef = doc(db, "surveys", id as string);
             const responsesCollection = collection(surveyRef, "responses");
             const responseDocRef = doc(responsesCollection);
@@ -182,12 +212,10 @@ setPersonas(fetchedPersonas);
       }
     }
   
-    // Update state with all responses & personas
     setResponses(newResponses);
     setPersonas(newPersonas);
     setGenerating(false);
   };
-
   if (loading) {
     return <p className="p-8 text-black">Loading survey...</p>;
   }
@@ -210,7 +238,7 @@ setPersonas(fetchedPersonas);
     value={numRespondents}
     onChange={(e) => setNumRespondents(Number(e.target.value))}
   >
-    {[1, 5, 10, 20, 50, 100].map((num) => (
+    {[1, 5, 10, 20, 50, 100, 200, 300].map((num) => (
       <option key={num} value={num}>
         {num}
       </option>
@@ -258,6 +286,12 @@ setPersonas(fetchedPersonas);
   📥 Download Excel
       </button>
       <Link href="/surveys">
+      <button
+  onClick={() => downloadCodebook(survey)}
+  className="mt-4 ml-4 bg-purple-500 text-white px-4 py-2 rounded"
+>
+  📖 Get Codebook
+</button>
     <button className="mt-4 ml-4  bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
       ⬅️ Back to Surveys
     </button>
