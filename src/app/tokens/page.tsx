@@ -88,32 +88,31 @@ export default function TokensPage() {
       await ensureUserDocExists(user.uid, user.email); // Ensure Firestore doc exists before checkout
       await startCheckoutSession("price_1QosfEDT4vO9oNMHa5zTZkkL");
     } catch (err) {
-      console.error("❌ Error starting checkout:", err);
-      setError("Failed to initiate checkout. Please try again.");
-    }
+      console.error("❌ Error starting checkout:", err);    }
   };
 
   // Function to spend 50 tokens
-  const handleSpendTokens = async () => {
-    try {
-      if (tokens < 50) {
-        setError("You do not have enough tokens to spend.");
-        return;
-      }
-
-      const newTokens = tokens - 50;
-      const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, { tokens: newTokens });
-
-      setTokens(newTokens);
-      console.log("✅ Successfully spent 50 tokens");
-
-    } catch (err) {
-      console.error("❌ Error spending tokens:", err);
-      setError("Failed to spend tokens. Please try again.");
+// Function to spend 50 tokens
+const handleSpendTokens = async () => {
+  try {
+    if (!user) {
+      return;
     }
-  };
 
+    if (tokens < 50) {
+      return;
+    }
+
+    const newTokens = tokens - 50;
+    const userDocRef = doc(db, "users", user.uid); // Ensure user is not null
+    await updateDoc(userDocRef, { tokens: newTokens });
+
+    setTokens(newTokens);
+    console.log("✅ Successfully spent 50 tokens");
+  } catch (err) {
+    console.error("❌ Error spending tokens:", err);
+  }
+};
   if (loading) {
     return (
       <main className="p-8">
