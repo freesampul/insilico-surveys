@@ -1,0 +1,66 @@
+Survey Codebook: Obesity and health
+
+Question 1: Height value in integer (cm). Please respond with only one number. Do not say more than your one number.
+
+Question 2: Is your family overweight or obsese?
+  1. Yes
+  2. No
+
+Question 3: Do you frequently consume fast food?
+  1. Yes
+  2. No
+
+Question 4: How often do you consume vegetables?
+  1. Rarely
+  2. Often
+  3. Always
+
+Question 5: How many meals do you have in a day?
+  1. 1-2 meals
+  2. 3 meals
+  3. 3+ meals
+
+Question 6: How often do you eat between meals?
+  1. Rarely
+  2. Often
+  3. Usually
+  4. Always
+
+Question 7: Do you smoke?
+  1. Yes
+  2. No
+
+Question 8: How much liquid do you drink per day?
+  1. Less than 1 liter
+  2. 1-2 liters
+  3. More than 2 liters
+
+Question 9: Do you calculate your calorie intake?
+  1. Yes
+  2. No
+
+Question 10: How often do you get physical exercise?
+  1. No physical activity.
+  2. In the range of 1-2 days.
+  3. In the range of 3-4 days.
+  4. In the range of 5-6 days.
+  5. 6+ days
+
+Question 11: How much time is spent using technology per day?
+  1. Between 0 and 2 hours
+  2. Between 3 and 5 hours
+  3. Exceeding five hours
+
+Question 12: What type of transportation do you use most often?
+  1. Automobile
+  2. Motorbike
+  3. Bike
+  4. Public Transportation
+  5. Walking
+
+Question 13: What is your weight class?
+  1. Underweight
+  2. Normal
+  3. Overweight
+  4. Obese
+

@@ -96,7 +96,7 @@ export const downloadCodebook = (survey: any) => {
   survey.questions.forEach((q: any, index: number) => {
     codebookContent += `Question ${index + 1}: ${q.text}\n`;
     
-    if (q.type === "multiple choice" && Array.isArray(q.options)) {
+    if (q.type === "multiple-choice" && Array.isArray(q.options)) {
       q.options.forEach((option: string, idx: number) => {
         codebookContent += `  ${idx + 1}. ${option}\n`;
       });
