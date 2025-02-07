@@ -4,7 +4,7 @@ import SignInButton from "./components/SignInButton";
 
 export default function HomePage() {
   return (
-    <main className="flex flex-col min-h-screen bg-black text-white font-sans">
+    <main className="flex flex-col min-h-screen bg-prab text-white font-sans">
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center px-6 py-20">
         <h1 className="text-5xl font-bold leading-tight mb-6">
@@ -47,7 +47,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer Section */}
-      <footer className="bg-gray-800 w-full text-center py-6 mt-auto">
+      <footer className="bg-primary w-full text-center py-6 mt-auto">
         <p className="text-gray-400">© 2025 Insilico Surveys. All Rights Reserved.</p>
       </footer>
     </main>

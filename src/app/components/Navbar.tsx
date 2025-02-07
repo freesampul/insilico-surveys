@@ -28,7 +28,7 @@ const Navbar = () => {
     }
 
     return (
-        <nav className="bg-gray-800 p-4 flex justify-between items-center">
+        <nav className="bg-textPrimary p-4 flex justify-between items-center">
             <div className="text-white">
                 <h1 className="text-lg font-bold">Insilico Surveys</h1>
             </div>
