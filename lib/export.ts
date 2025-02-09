@@ -7,6 +7,10 @@ export function exportResponsesToExcel(
     gender: string;
     race: string;
     income: string;
+    education: string;
+    political: string;
+    religion: string;
+    mood: string;
     personality?: {
       extremeAnswers: Array<{
         questionCode: string;
@@ -23,18 +27,22 @@ export function exportResponsesToExcel(
     return;
   }
 
-  // Dynamically gather question titles from the first respondent
+  // Gather question titles dynamically from the first respondent
   const firstRespondentId = respondentIds[0] as unknown as number;
   const questions = Object.keys(responses[firstRespondentId] || {});
 
-  // 👉 Define the headers (including new "Personality Extremes")
+  // 👉 Define the headers (Including newly added fields)
   const headers = [
     "Age",
     "Gender",
     "Race/Ethnicity",
     "Income Level",
+    "Education Level",
+    "Political Leaning",
+    "Religion",
+    "Mood",
     "Personality Extremes", 
-    ...questions,
+    ...questions,  // Add the survey question responses
   ];
 
   // 👉 Build worksheet data
@@ -46,28 +54,32 @@ export function exportResponsesToExcel(
       gender: "Unknown",
       race: "Unknown",
       income: "Unknown",
+      education: "Unknown",
+      political: "Unknown",
+      religion: "Unknown",
+      mood: "Unknown",
       personality: { extremeAnswers: [] },
     };
 
     // Convert the extremeAnswers array into a single string
-    let personalityString = "";
-    if (persona.personality?.extremeAnswers?.length) {
-      personalityString = persona.personality.extremeAnswers
-        .map(
-          (extreme) =>
-            `${extreme.questionCode}="${extreme.questionText}" (rating=${extreme.response})`
-        )
-        .join(" | ");
-    } else {
-      personalityString = "None";
-    }
+    let personalityString = persona.personality?.extremeAnswers?.length
+      ? persona.personality.extremeAnswers
+          .map((extreme) =>
+            `${extreme.questionCode}: "${extreme.questionText}" (rating=${extreme.response})`
+          )
+          .join(" | ")
+      : "None";
 
-    // Return a row object with the header matching keys
+    // Return a row object with the header-matching keys
     return {
       Age: persona.age,
       Gender: persona.gender,
       "Race/Ethnicity": persona.race,
       "Income Level": persona.income,
+      "Education Level": persona.education,
+      "Political Leaning": persona.political,
+      Religion: persona.religion,
+      Mood: persona.mood,
       "Personality Extremes": personalityString,
       // Merge in all question responses
       ...questions.reduce((acc, question) => {
@@ -82,6 +94,7 @@ export function exportResponsesToExcel(
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Survey Responses");
 
+  // Save the file
   XLSX.writeFile(workbook, "Survey_Responses.xlsx");
 }
 
@@ -92,16 +105,17 @@ export const downloadCodebook = (survey: any) => {
   }
 
   let codebookContent = `Survey Codebook: ${survey.title}\n\n`;
-  
+
   survey.questions.forEach((q: any, index: number) => {
     codebookContent += `Question ${index + 1}: ${q.text}\n`;
-    
+
     if (q.type === "multiple-choice" && Array.isArray(q.options)) {
       q.options.forEach((option: string, idx: number) => {
-        codebookContent += `  ${idx + 1}. ${option}\n`;
+        const optionLetter = String.fromCharCode(65 + idx); // Convert 0 -> A, 1 -> B, etc.
+        codebookContent += `  ${optionLetter}. ${option}\n`;
       });
     }
-    
+
     codebookContent += "\n";
   });
 

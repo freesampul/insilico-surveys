@@ -14,12 +14,29 @@ import { useParams } from "next/navigation";
 export default function SurveyDetailPage() {
   const { id } = useParams();
   const [survey, setSurvey] = useState<any>(null);
-  const [numRespondents, setNumRespondents] = useState(1);
+  const [numRespondents, setNumRespondents] = useState(100);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [responses, setResponses] = useState<{ [key: number]: { [question: string]: string } }>({});
-  const [personas, setPersonas] = useState<{ [key: string]: { age: string; gender: string; race: string; income: string } }>({});
-
+  const [personas, setPersonas] = useState<{
+    [key: string]: {
+      age: string;
+      gender: string;
+      race: string;
+      income: string;
+      education: string;
+      political: string;
+      religion: string;
+      mood: string;
+      personality?: {
+        extremeAnswers: Array<{
+          questionCode: string;
+          questionText: string;
+          response: number;
+        }>;
+      };
+    };
+  }>({});
   useEffect(() => {
     if (!id) return;
   
@@ -36,7 +53,25 @@ export default function SurveyDetailPage() {
           const responsesSnapshot = await getDocs(responsesCollection);
   
           const fetchedResponses: { [key: number]: { [question: string]: string } } = {};
-const fetchedPersonas: { [key: number]: { age: string; gender: string; race: string; income: string } } = {};
+          const fetchedPersonas: {
+            [key: number]: {
+              age: string;
+              gender: string;
+              race: string;
+              income: string;
+              education: string;
+              political: string;
+              religion: string;
+              mood: string;
+              personality?: {
+                extremeAnswers: Array<{
+                  questionCode: string;
+                  questionText: string;
+                  response: number;
+                }>;
+              };
+            };
+          } = {};
 let personaIndex = 0;
 
 responsesSnapshot.forEach((responseDoc) => {
@@ -57,6 +92,11 @@ responsesSnapshot.forEach((responseDoc) => {
       gender: data.persona?.gender || "Unknown",
       race: data.persona?.race || "Unknown",
       income: data.persona?.income || "Unknown",
+      education: data.persona?.education || "Unknown",
+      political: data.persona?.political || "Unknown",
+      religion: data.persona?.religion || "Unknown",
+      mood: data.persona?.mood || "Unknown",
+      personality: data.persona?.personality || { extremeAnswers: [] },
     };
   }
 });
@@ -89,12 +129,20 @@ setPersonas(fetchedPersonas);
     }
   
     interface Persona {
-      age: string;
-      gender: string;
-      race: string;
-      income: string;
+      age: string;        // e.g. "18-24"
+      gender: string;     // e.g. "Male"
+      race: string;       // e.g. "White"
+      income: string;     // e.g. "$50,000 to $74,999"
+      education: string;  // e.g. "High school diploma"
+      political: string;  // e.g. "Liberal", "Conservative", "Moderate"
+      religion: string;   // e.g. "Christian", "Atheist", "Muslim"
+      mood: string;       // e.g. "Happy", "Frustrated", "Indifferent"
       personality: {
-        extremeAnswers: { questionCode: string; questionText: string; response: number }[];
+        extremeAnswers: Array<{
+          questionCode: string;
+          questionText: string;
+          response: number; // 1 or 5
+        }>;
       };
     }
   
@@ -122,55 +170,90 @@ setPersonas(fetchedPersonas);
   
     for (let i = 0; i < numRespondents; i++) {
       const persona = generatedPersonas[i];
-      newPersonas[i] = persona;
+
+      setPersonas((prevPersonas) => ({
+        ...prevPersonas,
+        [i]: persona, // Update persona for current respondent
+      }))
       responseHistory[i] = []; // Initialize history for this persona
+
   
       const personalityBullets: string =
         persona.personality?.extremeAnswers
           ?.map((extreme) => {
-            const label = extreme.response === 5 ? "AGREE" : "DISAGREE";
-            return `- ${extreme.questionCode} ("${extreme.questionText}"): ${label}`;
+            return `- "${extreme.questionText}"`;
           })
           .join("\n") || "No extreme traits found";
   
-      for (const question of survey.questions as SurveyQuestion[]) {
-        try {
-          const pastResponsesText: string =
-            responseHistory[i].length > 0
-              ? `Previously, you answered the following questions as this persona:\n${responseHistory[i]
-                  .map((resp) => `- Q: "${resp.question}" A: "${resp.answer}"`)
-                  .join("\n")}\n\n`
-              : "";
+          for (const question of survey.questions as SurveyQuestion[]) {
+            try {
+              const pastResponsesText: string =
+  responseHistory[i].length > 0
+    ? `Previously, you answered the following questions as this persona:\n${responseHistory[i]
+        .map((resp) => {
+          // Find the corresponding question in the survey
+          const questionObj = survey.questions.find((q: any) => q.text === resp.question);
+          
+          // Get the answer text by looking up the choice letter in the question options
+          const answerText = questionObj 
+            ? questionObj.options[resp.answer.charCodeAt(0) - 65] // Convert 'A' -> 0, 'B' -> 1, etc.
+            : "Unknown";
+
+          return `- Q: "${resp.question}"\n  A: "${answerText}"`;
+        })
+        .join("\n")}\n\n`
+    : "";
+        
+              // Convert multiple-choice options to A, B, C format
+              let letterOptions = "";
+              if (question.type === "multiple choice" && Array.isArray(question.options)) {
+                letterOptions = question.options
+                  .map((option, index) => `${String.fromCharCode(65 + index)}. ${option}`)
+                  .join("\n");
+              }
   
-          const response = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              persona,
-              question: question.text,
-              instructions: `You are acting as a survey respondent with the following demographic characteristics:
-  - Age: ${persona.age}
-  - Gender: ${persona.gender}
-  - Race/Ethnicity: ${persona.race}
-  - Income Level: ${persona.income}
-  
-  Your personality test results indicate extremes in the following areas:
-  ${personalityBullets}
-  
-  ${pastResponsesText}Answer the following survey question as a person with this demographic and personality profile would. It is March 2025. Provide a natural, realistic, and curt response that reflects this background's typical perspectives, interests, or concerns.
-  
-  Survey Question: "${question.text}"
-  Question Type: ${question.type}
-  
-  ${
-    question.type === "multiple choice" && Array.isArray(question.options)
-      ? `Available Options:\n${question.options
-          .map((option, index) => `${index + 1}. ${option}`)
-          .join("\n")}`
-      : ""
-  }
-  
-  If the question is multiple choice, please print exactly and only one number- (1, 2, 3, etc.), that corresponds to the option you choose.`,
+              const response = await fetch("/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  persona,
+                  question: question.text,
+                  instructions: `You are acting as a survey respondent with the following demographic characteristics:
+        - Age: ${persona.age}
+        - Gender: ${persona.gender}
+        - Race: ${persona.race}
+        - Income: ${persona.income}
+        - Education: ${persona.education}
+        - Politics: ${persona.political}
+        - Religion: ${persona.religion}
+        - Mood: ${persona.mood}
+
+        Your personality test results indicate that you STRONGLY AGREE with the following statements:
+        ${personalityBullets}
+        
+        Your past responses to questions follow this text. Consider whether your past responses should influence your answer to this question.
+        ${pastResponsesText} 
+
+        Survey Response Rules
+1. Be realistic and nuanced. People often have inconsistencies in their beliefs and behaviors.
+2. Responses should feel natural and balanced, neither overly negative nor overly idealized.
+3. If a question involves politics, health, or science, remember that people may have different perspectives, but avoid assuming extreme skepticism.
+4. If uncertain, make an informed guess, reflecting what someone in this demographic might reasonably say.
+
+        If the question is multiple choice, please print exactly and only one **capital letter** that corresponds to your chosen option. Do not include any additional text, numbers, or punctuation.
+        
+        Survey Question: "${question.text}"
+        Question Type: ${question.type}
+        
+        ${
+          question.type === "multiple-choice" && Array.isArray(question.options)
+            ? `Q: "${question.text}"\nAvailable Options:\n${question.options
+                .map((option, idx) => `${String.fromCharCode(65 + idx)}. ${option}`)
+                .join("\n")}`
+            : ""
+        }
+        
+        `,
             }),
           });
   
@@ -212,10 +295,9 @@ setPersonas(fetchedPersonas);
       }
     }
   
-    setResponses(newResponses);
-    setPersonas(newPersonas);
     setGenerating(false);
   };
+
   if (loading) {
     return <p className="p-8 text-black">Loading survey...</p>;
   }
@@ -250,23 +332,6 @@ setPersonas(fetchedPersonas);
 
       </div>
 
-      {/* Survey Questions and Responses */}
-      <h2 className="text-xl font-semibold mb-2">Questions:</h2>
-      <ul className="space-y-4">
-        {survey.questions.map((q: any, index: number) => (
-          <li key={index} className="border p-4 rounded">
-            <p className="text-lg font-semibold">Question {index + 1}</p>
-            <p className="text-white-800">{q.text}</p>
-            {Object.entries(responses).map(([personaId, answers]) => (
-  <div key={personaId} className="mt-2">
-    <p className="font-semibold text-white">🧑 Persona {parseInt(personaId) + 1}:</p>
-    <p className="text-blue-700">🤖 {answers[q.text] || "Generating..."}</p>
-  </div>
-))}
-          </li>
-        ))}
-      </ul>
-
       {/* Generate AI Responses Button */}
       <button
         onClick={handleGenerateResponses}
@@ -295,7 +360,40 @@ setPersonas(fetchedPersonas);
     <button className="mt-4 ml-4  bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
       ⬅️ Back to Surveys
     </button>
-  </Link>
+      </Link>
+      <br></br>
+      <br></br>
+      
+
+
+      {/* Survey Questions and Responses */}
+      <h2 className="text-xl font-semibold mb-2">Questions:</h2>
+      <ul className="space-y-4">
+        {survey.questions.map((q: any, index: number) => (
+          <li key={index} className="border p-4 rounded">
+            <p className="text-lg font-semibold">Question {index + 1}</p>
+            <p className="text-white-800">{q.text}</p>
+            {Object.entries(responses).map(([personaId, answers]) => {
+  const persona = personas[personaId] || {}; // Get corresponding persona
+  
+  return (
+    <div key={personaId} className="mt-2">
+      <p className="font-semibold text-white">
+  🧑 Persona {parseInt(personaId) + 1}:{" "}
+  <span className="text-sm text-gray-400">
+    {persona.age && persona.gender
+      ? `${persona.age} years old, ${persona.gender}, ${persona.race}, ${persona.income}`
+      : "No persona data available"}
+  </span>
+</p>
+      <p className="text-blue-700">🤖: {answers[q.text] || "Generating..."}</p>
+    </div>
+  );
+})}
+          </li>
+        ))}
+      </ul>
+
     </main>
   );
 }

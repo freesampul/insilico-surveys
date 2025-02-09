@@ -3,6 +3,10 @@ export interface Persona {
   gender: string;     // e.g. "Male"
   race: string;       // e.g. "White"
   income: string;     // e.g. "$50,000 to $74,999"
+  education: string;  // e.g. "High school diploma"
+  political: string;  // e.g. "Liberal", "Conservative", "Moderate"
+  religion: string;   // e.g. "Christian", "Atheist", "Muslim"
+  mood: string;       // e.g. "Happy", "Frustrated", "Indifferent"
   personality: {
     extremeAnswers: Array<{
       questionCode: string;
@@ -101,6 +105,41 @@ const incomes = [
   { range: "$150,000 and over",   percentage: 11 },
 ];
 
+const educationLevels = [
+  { level: "Less than high school", percentage: 10 },
+  { level: "High school diploma", percentage: 30 },
+  { level: "Some college", percentage: 25 },
+  { level: "Bachelor’s degree", percentage: 20 },
+  { level: "Graduate degree", percentage: 15 },
+];
+
+const politicalLeanings = [
+  { leaning: "Very Conservative", percentage: 10 },
+  { leaning: "Conservative", percentage: 25 },
+  { leaning: "Moderate", percentage: 30 },
+  { leaning: "Liberal", percentage: 25 },
+  { leaning: "Very Liberal", percentage: 10 },
+];
+
+const religions = [
+  { religion: "Christian", percentage: 63 },
+  { religion: "Jewish", percentage: 2 },
+  { religion: "Muslim", percentage: 1 },
+  { religion: "Hindu", percentage: 1 },
+  { religion: "Buddhist", percentage: 1 },
+  { religion: "Atheist", percentage: 10 },
+  { religion: "Agnostic", percentage: 10 },
+  { religion: "Other", percentage: 12 },
+];
+
+const moods = [
+  { mood: "Happy", percentage: 40 },
+  { mood: "Frustrated", percentage: 20 },
+  { mood: "Indifferent", percentage: 20 },
+  { mood: "Anxious", percentage: 10 },
+  { mood: "Excited", percentage: 10 },
+];
+
 // ---------------------------------------------
 // 3) Helper to pick random item by distribution
 // ---------------------------------------------
@@ -183,7 +222,7 @@ function getAllExtremeAnswers(
       const value = parseInt(rawValue, 10);
       return { questionCode, value };
     })
-    .filter(({ value }) => value === 1 || value === 5)
+    .filter(({ value }) => value === 5)
     .map(({ questionCode, value }) => ({
       questionCode,
       questionText: questionMap[questionCode] ?? "(Unknown question)",
@@ -200,6 +239,10 @@ export function getRandomPersonaWithBig5(): Persona {
   const genderItem = selectRandomGroup(genders);
   const raceItem = selectRandomGroup(races);
   const incomeItem = selectRandomGroup(incomes);
+  const educationItem = selectRandomGroup(educationLevels);
+  const politicalItem = selectRandomGroup(politicalLeanings);
+  const religionItem = selectRandomGroup(religions);
+  const moodItem = selectRandomGroup(moods);
 
   // Step 2: map demographics to big5 codes
   const raceCodes: number[] = mapRaceLabelToCode(raceItem.race);
@@ -232,15 +275,19 @@ export function getRandomPersonaWithBig5(): Persona {
 
   // **Fix:** Ensure the returned object fully conforms to `Persona`
   return {
-    age: String(ageItem.range), // Ensuring it's a string
+    age: String(ageItem.range),
     gender: String(genderItem.gender),
     race: String(raceItem.race),
     income: String(incomeItem.range),
+    education: String(educationItem.level),
+    political: String(politicalItem.leaning),
+    religion: String(religionItem.religion),
+    mood: String(moodItem.mood),
     personality: {
       extremeAnswers: extremeAnswers.map((extreme) => ({
         questionCode: String(extreme.questionCode),
         questionText: String(extreme.questionText),
-        response: Number(extreme.response), // Ensuring number type
+        response: Number(extreme.response),
       })),
     },
   };

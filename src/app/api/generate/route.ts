@@ -23,12 +23,12 @@ export async function POST(req: Request) {
 
     // 2) Make the OpenAI API request
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: instructions }, // The persona context
         { role: "user", content: question },
       ],
-      temperature: 0.7,
+      temperature: 0.8,
       max_tokens: 150,
     });
 
