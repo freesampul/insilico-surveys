@@ -21,32 +21,26 @@ const Navbar = () => {
 
     if (loading) {
         return (
-            <nav className="bg-gray-800 p-4">
-                <p className="text-white">Loading...</p>
+            <nav className="bg-cream p-4">
+                <p className="text-black">Loading...</p>
             </nav>
         );
     }
 
     return (
-        <nav className="bg-textPrimary p-4 flex justify-between items-center">
-            <div className="text-white">
-                <h1 className="text-lg font-bold">Insilico Surveys</h1>
+        <nav className="bg-[#FFFFDF] p-4 flex justify-center items-center shadow-md">
+            <div className="text-black text-center">
+                <h1 className="text-xl font-bold">Insilico Surveys</h1>
             </div>
-            <div className="flex items-center space-x-6">
-                <Link href="/" className="text-white hover:text-green-500">
-                    Home
-                </Link>
-                <Link href="/tokens" className="text-white hover:text-green-500">
-                    Tokens
-                </Link>
-                <Link href="/surveys" className="text-white hover:text-green-500">
-                    Surveys
-                </Link>
+            <div className="flex items-center space-x-6 ml-10">
+                <NavItem href="/">Home</NavItem>
+                <NavItem href="/tokens">Tokens</NavItem>
+                <NavItem href="/surveys">Surveys</NavItem>
                 {user ? (
                     <div className="relative">
                         <button
                             onClick={() => setShowDropdown(!showDropdown)} // Toggle dropdown visibility
-                            className="text-white hover:text-green-500"
+                            className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all"
                         >
                             Welcome, {user.displayName}!
                         </button>
@@ -65,13 +59,21 @@ const Navbar = () => {
                         )}
                     </div>
                 ) : (
-                    <Link href="/signin" className="text-white hover:text-green-500">
-                        Sign In
-                    </Link>
+                    <NavItem href="/signin">Sign In</NavItem>
                 )}
             </div>
         </nav>
     );
 };
+
+// Reusable Nav Item with hover effect
+const NavItem = ({ href, children }) => (
+    <Link
+        href={href}
+        className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all"
+    >
+        {children}
+    </Link>
+);
 
 export default Navbar;
