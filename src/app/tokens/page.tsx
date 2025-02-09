@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { startCheckoutSession } from "@/utils/firebase.utils";
-import { getUserTokens, ensureUserDocExists, db } from "@/utils/firebase.utils"; // ✅ Import `db`
+import { getUserTokens, ensureUserDocExists, db } from "@/utils/firebase.utils";
 import { doc, updateDoc } from "firebase/firestore";
 import { auth } from "../../utils/firebase.utils";
 import { onAuthStateChanged } from "firebase/auth";
@@ -19,54 +19,39 @@ export default function TokensPage() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          await ensureUserDocExists(firebaseUser.uid, firebaseUser.email); // Ensure Firestore doc exists
-          const userTokens = await getUserTokens(firebaseUser.uid); // Fetch initial tokens
-          setTokens(userTokens); // Update tokens
+          await ensureUserDocExists(firebaseUser.uid, firebaseUser.email);
+          const userTokens = await getUserTokens(firebaseUser.uid);
+          setTokens(userTokens);
         } else {
-          setTokens(0); // Reset tokens if no user
+          setTokens(0);
         }
       } catch (err) {
         console.error("❌ Error in auth state change logic:", err);
       } finally {
-        setLoading(false); // Stop loading regardless of success/failure
+        setLoading(false);
       }
     });
 
-    return () => unsubscribe(); // Cleanup listener
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     const updateTokensAfterPurchase = async () => {
-      if (!user) {
-        console.log("⏳ Waiting for user...");
-        return;
-      }
+      if (!user) return;
 
-      // Check if we're returning from a successful purchase
       const urlParams = new URLSearchParams(window.location.search);
       const isSuccess = urlParams.get("success");
 
       if (isSuccess === "true" && !updating) {
-        console.log("💰 Processing successful purchase for user:", user.uid);
         setUpdating(true);
-
         try {
           const currentTokens = await getUserTokens(user.uid);
-          console.log("Current tokens:", currentTokens);
-
-          // Ensure Firestore document exists before updating
-          await ensureUserDocExists(user.uid, user.email);
-
-          // Update tokens in Firestore
           const userDocRef = doc(db, "users", user.uid);
           const newTokens = currentTokens + 100;
 
           await updateDoc(userDocRef, { tokens: newTokens });
-
-          console.log("✅ Tokens updated successfully:", newTokens);
           setTokens(newTokens);
 
-          // Clean up the URL after purchase
           window.history.replaceState({}, "", "/tokens");
         } catch (err) {
           console.error("❌ Error updating tokens:", err);
@@ -79,38 +64,13 @@ export default function TokensPage() {
     updateTokensAfterPurchase();
   }, [user, updating]);
 
-  const handleBuyTokens = async () => {
+  const handleBuyTokens = async (priceId: string) => {
     try {
-      if (!user) {
-        throw new Error("User must be signed in to purchase tokens.");
-      }
-
-      await ensureUserDocExists(user.uid, user.email); // Ensure Firestore doc exists before checkout
-      await startCheckoutSession("price_1QosfEDT4vO9oNMHa5zTZkkL");
+      if (!user) throw new Error("User must be signed in to purchase tokens.");
+      await ensureUserDocExists(user.uid, user.email);
+      await startCheckoutSession(priceId);
     } catch (err) {
       console.error("❌ Error starting checkout:", err);
-      setError("Failed to initiate checkout. Please try again.");
-    }
-  };
-
-  // Function to spend 50 tokens
-  const handleSpendTokens = async () => {
-    try {
-      if (tokens < 50) {
-        setError("You do not have enough tokens to spend.");
-        return;
-      }
-
-      const newTokens = tokens - 50;
-      const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, { tokens: newTokens });
-
-      setTokens(newTokens);
-      console.log("✅ Successfully spent 50 tokens");
-
-    } catch (err) {
-      console.error("❌ Error spending tokens:", err);
-      setError("Failed to spend tokens. Please try again.");
     }
   };
 
@@ -136,14 +96,7 @@ export default function TokensPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-4 text-white">Tokens</h1>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
-          <p>{error}</p>
-        </div>
-      )}
+      <h1 className="text-3xl font-bold text-white mb-6">Token Plans</h1>
 
       {/* Display token balance */}
       <div className="bg-gray-800 rounded-lg p-6 mb-8">
@@ -155,37 +108,59 @@ export default function TokensPage() {
         )}
       </div>
 
-      <div className="bg-gray-800 rounded-lg p-6 mb-8">
-        <h2 className="text-xl text-white mb-2">Purchase Tokens</h2>
-        <div className="flex flex-col space-y-4">
-          <div className="p-4 border border-gray-700 rounded-lg">
-            <h3 className="text-lg text-white mb-2">100 Tokens Package</h3>
-            <p className="text-gray-400 mb-4">Perfect for getting started with AI survey responses</p>
-            <button
-              onClick={handleBuyTokens}
-              className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              Buy for $1.00
-            </button>
-          </div>
+      {/* Subscription Plans */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Basic Plan */}
+        <div className="bg-gray-800 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-white">Basic</h3>
+          <p className="text-gray-400 mt-2">100 tokens / month</p>
+          <p className="text-xl font-bold text-green-400">$5 / month</p>
+          <button
+            onClick={() => handleBuyTokens("price_basic_placeholder")}
+            className="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Subscribe
+          </button>
+        </div>
+
+        {/* Pro Plan */}
+        <div className="bg-gray-800 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-white">Pro</h3>
+          <p className="text-gray-400 mt-2">250 tokens / month</p>
+          <p className="text-xl font-bold text-green-400">$10 / month</p>
+          <button
+            onClick={() => handleBuyTokens("price_pro_placeholder")}
+            className="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Subscribe
+          </button>
+        </div>
+
+        {/* Enterprise Plan */}
+        <div className="bg-gray-800 p-6 rounded-lg text-center">
+          <h3 className="text-2xl font-bold text-white">Enterprise</h3>
+          <p className="text-gray-400 mt-2">1000 tokens / month</p>
+          <p className="text-xl font-bold text-green-400">$35 / month</p>
+          <button
+            onClick={() => handleBuyTokens("price_enterprise_placeholder")}
+            className="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Subscribe
+          </button>
         </div>
       </div>
 
-      {/* Spend Tokens Button */}
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h2 className="text-xl text-white mb-4">Spend Tokens</h2>
-        <div className="flex flex-col space-y-4">
-          <div className="p-4 border border-gray-700 rounded-lg">
-            <h3 className="text-lg text-white mb-2">Spend 50 Tokens</h3>
-            <p className="text-gray-400 mb-4">Spend 50 tokens to access premium features</p>
-            <button
-              onClick={handleSpendTokens}
-              className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
-            >
-              Spend 50 Tokens
-            </button>
-          </div>
-        </div>
+      {/* One-Time Token Purchases */}
+      <h2 className="text-2xl font-bold text-white mt-12 mb-4">One-Time Purchases</h2>
+      <div className="bg-gray-800 p-6 rounded-lg text-center">
+        <h3 className="text-2xl font-bold text-white">100 Tokens</h3>
+        <p className="text-xl font-bold text-green-400">$5 (One-Time)</p>
+        <button
+          onClick={() => handleBuyTokens("price_onetime_placeholder")}
+          className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Buy Now
+        </button>
       </div>
     </main>
   );
