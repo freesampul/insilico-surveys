@@ -22,13 +22,13 @@ const Navbar = () => {
     if (loading) {
         return (
             <nav className="bg-cream p-4">
-                <p className="text-black">Loading...</p>
+                <p className="text-black">.</p>
             </nav>
         );
     }
 
     return (
-        <nav className="bg-[#FFFFDF] p-4 flex justify-center items-center shadow-md">
+        <nav className="bg-[#f5ebe0] p-4 flex justify-center items-center shadow-md border-b border-[#e4dacd]">
             <div className="text-black text-center">
                 <h1 className="text-xl font-bold">Insilico Surveys</h1>
             </div>
@@ -45,13 +45,13 @@ const Navbar = () => {
                             Welcome, {user.displayName}!
                         </button>
                         {showDropdown && (
-                            <div className="absolute right-0 mt-2 bg-gray-700 text-white rounded-lg shadow-lg w-40">
+                            <div className="absolute right-0 mt-2 bg-[#d6ccc2] text-black rounded-lg shadow-lg w-40">
                                 <div className="p-2 text-sm">
-                                    <p className="text-gray-300">Tokens: {tokens}</p>
+                                    <p className="text-black">Tokens: {tokens}</p>
                                 </div>
                                 <button
                                     onClick={handleSignOut} // Handle sign-out
-                                    className="w-full text-left p-2 hover:bg-gray-600 rounded-lg"
+                                    className="w-full text-left p-2 hover:bg-[#e4dacd] rounded-lg"
                                 >
                                     Sign Out
                                 </button>

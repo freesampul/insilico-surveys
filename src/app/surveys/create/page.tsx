@@ -61,7 +61,7 @@ export default function CreateSurveyPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-4 text-white">Create a Survey</h1>
+      <h1 className="text-2xl font-bold mb-4 text-black">Create a Survey</h1>
 
       {/* Survey Title */}
       <input
@@ -74,7 +74,7 @@ export default function CreateSurveyPage() {
       {/* Questions */}
       {questions.map((q, index) => (
         <div key={index} className="mb-4">
-          <p className="text-white font-semibold mb-2">Question {index + 1}</p>
+          <p className="text-black font-semibold mb-2">Question {index + 1}</p>
           
           {/* Question Input */}
           <input
@@ -122,13 +122,13 @@ export default function CreateSurveyPage() {
   </button>
 
   {/* Save Survey Button */}
-  <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded">
+  <button onClick={handleSubmit} className="bg-blue-500 text-black px-4 py-2 rounded">
     Save Survey
   </button>
 
   {/* Back to Surveys Button */}
   <Link href="/surveys">
-    <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+    <button className="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-600">
       ⬅️ Back to Surveys
     </button>
   </Link>

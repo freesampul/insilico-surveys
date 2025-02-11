@@ -9,10 +9,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#818D92", // ✅ Add your primary color
-        secondary: "#B9A394",
-        textPrimary: "#31393c", // ✅ Add text color
-        textSecondary: "#B9A394",
+        primary: "#f5ebe0", // ✅ Add your primary color
+        secondary: "#f5ebe0",
+        textPrimary: "#f5ebe0", // ✅ Add text color
+        textSecondary: "#f5ebe0",
       },
     },
   },

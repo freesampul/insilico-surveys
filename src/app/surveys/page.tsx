@@ -5,10 +5,11 @@ import { db } from "../../../lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/app/context/AuthContext";
 import Link from "next/link";
+import { FaPlus, FaEye } from "react-icons/fa"; // Import icons for buttons
 
 export default function SurveysPage() {
-  const { user } = useAuth(); // Get the logged-in user
-  const [surveys, setSurveys] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,54 +36,49 @@ export default function SurveysPage() {
 
   if (!user) {
     return (
-      <main className="p-8 text-gray-900 bg-[#f5f5dc] min-h-screen flex flex-col justify-center items-center">
-        <h1 className="text-3xl font-bold mb-4">Surveys</h1>
+      <main className="p-8 bg-[#f5ebe0] min-h-screen flex flex-col justify-center items-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Surveys</h1>
         <p className="text-gray-700">Please sign in to view your surveys.</p>
       </main>
     );
   }
 
   return (
-    <main className="bg-[#f5f5dc] min-h-screen flex flex-col justify-between">
-      {/* Main Content */}
-      <div className="p-8 text-gray-900">
-        <h1 className="text-3xl font-bold mb-6">Your Surveys</h1>
-        
-        {/* Create Survey Button */}
-        <div className="mb-6 flex justify-end">
-          <Link href="/surveys/create">
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
-              ➕ Create New Survey
-            </button>
-          </Link>
-        </div>
-
-        {loading ? (
-          <p className="text-gray-700">Loading surveys...</p>
-        ) : surveys.length === 0 ? (
-          <p className="text-gray-700">You haven’t created any surveys yet.</p>
-        ) : (
-          <ul className="space-y-4">
-            {surveys.map((survey) => (
-              <li key={survey.id} className="bg-white border border-gray-300 p-4 rounded-lg shadow-md hover:shadow-lg transition">
-                <h2 className="text-lg font-semibold">{survey.title}</h2>
-                <p className="text-gray-600">
-                  Created on: {new Date(survey.createdAt?.seconds * 1000).toLocaleDateString()}
-                </p>
-                <Link href={`/surveys/${survey.id}`}>
-                  <button className="mt-2 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
-                    View Survey
-                  </button>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+    <main className="p-8 bg-[#f5ebe0] min-h-screen flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold text-gray-900">Your Surveys</h1>
+        <Link href="/surveys/create">
+          <button className="flex items-center gap-2 bg-green-500 text-white px-5 py-3 rounded-full shadow-md hover:bg-green-600 transition">
+            <FaPlus /> Create Survey
+          </button>
+        </Link>
       </div>
 
-      <footer className="bg-white text-white text-center py-4 mt-8">
-        <p className="text-gray-400">© 2025 Insilico Surveys. All Rights Reserved.</p>
-      </footer>
+      {/* Survey List */}
+      {loading ? (
+        <p className="text-gray-700">Loading surveys...</p>
+      ) : surveys.length === 0 ? (
+        <p className="text-gray-700 text-lg text-center">You haven’t created any surveys yet.</p>
+      ) : (
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {surveys.map((survey) => (
+            <li key={survey.id} className="bg-[#e4dacd] shadow-md rounded-lg p-6 flex flex-col justify-between border-black-1px">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">{survey.title}</h2>
+                <p className="text-gray-600 text-sm">
+                  Created on: {new Date(survey.createdAt?.seconds * 1000).toLocaleDateString()}
+                </p>
+              </div>
+              <Link href={`/surveys/${survey.id}`}>
+                <button className="mt-4 flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition">
+                  <FaEye /> View Survey
+                </button>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
