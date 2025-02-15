@@ -35,7 +35,6 @@ export const ensureUserDocExists = async (uid, email) => {
  * ✅ Start a Stripe Checkout Session
  */
 export const startCheckoutSession = async (priceId) => {
-  const auth = getAuth();
   const currentUser = auth.currentUser;
 
   if (!currentUser) {
@@ -47,18 +46,13 @@ export const startCheckoutSession = async (priceId) => {
 
     const response = await fetch("/api/create-checkout-session", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        priceId,
-        userId: currentUser.uid,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId, userId: currentUser.uid }), // ✅ Use price_xxx
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Checkout session error:", {
+      console.error("❌ Checkout session error:", {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -73,11 +67,10 @@ export const startCheckoutSession = async (priceId) => {
 
     window.location.href = data.url;
   } catch (error) {
-    console.error("Error starting checkout:", error);
+    console.error("❌ Error starting checkout:", error);
     throw error;
   }
 };
-
 /**
  * ✅ Fetch a user's token balance from Firestore.
  */
