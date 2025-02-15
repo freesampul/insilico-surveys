@@ -105,7 +105,7 @@ export default function HomePage() {
 
       {/* Footer Section */}
       <footer className="bg-[#f5ebe0] w-full text-center py-6 mt-auto text-gray-500">
-        <p>© 2025 Insilico Surveys. All Rights Reserved.</p>
+        <p>© 2025 nsilico. All Rights Reserved.</p>
       </footer>
     </main>
   );

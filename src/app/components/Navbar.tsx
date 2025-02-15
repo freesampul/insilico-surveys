@@ -5,10 +5,12 @@ import { useAuth } from "@/app/context/AuthContext"; // Import the custom auth c
 import { signOut } from "firebase/auth"; // Firebase sign-out method
 import { auth } from "../../utils/firebase.utils"; // Import auth from utils
 import Link from "next/link"; // Link for routing between pages
+import { usePathname } from "next/navigation"; // Import usePathname to get the current path
 
 const Navbar = () => {
     const { user, tokens, loading } = useAuth(); // Get the user and tokens from context
     const [showDropdown, setShowDropdown] = useState(false); // State to control dropdown visibility
+    const pathname = usePathname(); // Get the current path
 
     const handleSignOut = async () => {
         try {
@@ -30,19 +32,19 @@ const Navbar = () => {
     return (
         <nav className="bg-[#f5ebe0] p-4 flex justify-center items-center shadow-md border-b border-[#e4dacd]">
             <div className="text-black text-center">
-                <h1 className="text-xl font-bold">Insilico Surveys</h1>
+                <h1 className="text-xl font-bold">nsilico</h1>
             </div>
             <div className="flex items-center space-x-6 ml-10">
-                <NavItem href="/">Home</NavItem>
-                <NavItem href="/tokens">Tokens</NavItem>
-                <NavItem href="/surveys">Surveys</NavItem>
+                <NavItem href="/" pathname={pathname}>home</NavItem>
+                <NavItem href="/tokens" pathname={pathname}>tokens</NavItem>
+                <NavItem href="/surveys" pathname={pathname}>surveys</NavItem>
                 {user ? (
                     <div className="relative">
                         <button
                             onClick={() => setShowDropdown(!showDropdown)} // Toggle dropdown visibility
                             className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all"
                         >
-                            Welcome, {user.displayName}!
+                            welcome, {user.displayName}!
                         </button>
                         {showDropdown && (
                             <div className="absolute right-0 mt-2 bg-[#d6ccc2] text-black rounded-lg shadow-lg w-40">
@@ -53,27 +55,33 @@ const Navbar = () => {
                                     onClick={handleSignOut} // Handle sign-out
                                     className="w-full text-left p-2 hover:bg-[#e4dacd] rounded-lg"
                                 >
-                                    Sign Out
+                                    sign out
                                 </button>
                             </div>
                         )}
                     </div>
                 ) : (
-                    <NavItem href="/signin">Sign In</NavItem>
+                    <NavItem href="/signin" pathname={pathname}>Sign In</NavItem>
                 )}
             </div>
         </nav>
     );
 };
 
-// Reusable Nav Item with hover effect
-const NavItem = ({ href, children }) => (
-    <Link
-        href={href}
-        className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all"
-    >
-        {children}
-    </Link>
-);
+// Reusable Nav Item with active page highlighting
+const NavItem = ({ href, pathname, children }) => {
+    const isActive = pathname === href;
+    
+    return (
+        <Link
+            href={href}
+            className={`font-semibold px-3 py-1 rounded-md transition-all ${
+                isActive ? "bg-black text-white" : "text-black hover:bg-black hover:text-white"
+            }`}
+        >
+            {children}
+        </Link>
+    );
+};
 
 export default Navbar;
