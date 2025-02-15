@@ -28,12 +28,7 @@ export default function SignInButton() {
   return (
     <div className="flex items-center justify-center">
       {user ? (
-        <button
-          onClick={() => router.push("/surveys")}
-          className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-500 text-white text-lg font-medium rounded-full shadow-md transition-transform transform hover:scale-105"
-        >
-          <FaPaperPlane className="text-xl" /> Go to Surveys
-        </button>
+        <p></p>
       ) : (
         <button
           onClick={handleGoogleSignIn}

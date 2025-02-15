@@ -8,11 +8,10 @@ import Link from "next/link";
 import { getUserTokens } from "@/utils/firebase.utils"
 import { updateDoc } from "firebase/firestore";
 import { useAuth } from "@/app/context/AuthContext";
-
-
-
 import { doc, getDoc, getDocs, collection, addDoc, writeBatch, setDoc } from "firebase/firestore";
 import { useParams } from "next/navigation";
+import { FaUser, FaRobot, FaDownload, FaBook, FaArrowLeft } from "react-icons/fa";
+
 
 
 export default function SurveyDetailPage() {
@@ -333,96 +332,131 @@ setPersonas(fetchedPersonas);
   }
 
   return (
-    <main className="p-8 text-white">
-      <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
+    
+    <main className="p-8 bg-[#f5ebe0] min-h-screen flex flex-col items-center">
+  {/* Survey Title */}
+  <div className="text-center mb-4">
+    <h1 className="text-5xl font-bold text-black">{survey.title}</h1>
+  </div>
 
-      {/* Persona Selection Form */}
-      <div className="mb-6 p-4 border rounded">
-        <h2 className="text-lg text-white font-semibold mb-2">Customize AI Respondents:</h2>
-        <label className="block text-white mt-2">
-  Number of AI Respondents:
-  <select
-    className="border p-2 w-full mt-1 text-black"
-    value={numRespondents}
-    onChange={(e) => setNumRespondents(Number(e.target.value))}
-  >
-    {[1, 5, 10, 20, 50, 100, 200, 300].map((num) => (
-      <option key={num} value={num}>
-        {num}
-      </option>
-    ))}
+  {/* Buttons */}
+  <div className="mt-4 mb-10 flex flex-wrap gap-1">
+    {/* Generate AI Responses Button */}
+    <button
+      onClick={handleGenerateResponses}
+      disabled={generating}
+      className={`bg-blue-500 text-black flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-blue-600 transition ${
+        generating ? "opacity-50 cursor-not-allowed" : ""
+      }`}
+    >
+      <FaRobot /> {generating ? "Generating AI Responses..." : "Generate AI Responses"}
+    </button>
+
+    {/* Export Responses to Excel Button */}
+    <button
+      onClick={() => exportResponsesToExcel(responses, personas)}
+      className="bg-green-500 text-white flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-green-600 transition"
+    >
+      <FaDownload /> Download Excel
+    </button>
+
+    {/* Get Codebook Button */}
+    <button
+      onClick={() => downloadCodebook(survey)}
+      className="bg-purple-500 text-white flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-purple-600 transition"
+    >
+      <FaBook /> Get Codebook
+    </button>
+
+    {/* Back to Surveys Button */}
+    <Link href="/surveys">
+      <button className="bg-red-500 text-white flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-red-600 transition">
+        <FaArrowLeft /> Back to Surveys
+      </button>
+    </Link>
+  </div>
+
+  {/* Persona Selection */}
+  <div className="bg-white/90 backdrop-blur-md shadow-lg rounded-xl p-6 w-full max-w-3xl">
+        <h2 className="text-2xl font-semibold text-black mb-4">Customize AI Respondents</h2>
+        <label className="block text-black">
+          Number of AI Respondents:
+          <select
+            className="border p-3 w-full mt-2 rounded-lg text-black"
+            value={numRespondents}
+            onChange={(e) => setNumRespondents(Number(e.target.value))}
+          >
+            {[1, 5, 10, 20, 50, 100, 200, 300].map((num) => (
+              <option key={num} value={num}>
+                {num}
+              </option>
+            ))}
 
           </select>
-          <p className="mt-4 text-lg">Total Token Cost: {tokenCost} tokens</p>
-          <p className="text-sm text-gray-400">You currently have {tokens} tokens</p>
+          <p className="mt-3 text-lg text-black">
+          Total Token Cost: <span className="font-bold">{tokenCost}</span> tokens
+        </p>
+        <p className="text-sm text-black">
+          You currently have <span className="font-bold">{tokens}</span> tokens
+        </p>
 </label>
 
 
+{/* Survey Questions */}
 
+<div className="w-full max-w-4xl mt-10">
+  <h2 className="text-3xl font-semibold text-black mb-6">Survey Questions</h2>
+  <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {survey.questions.map((q, index) => (
+      <li key={index} className="bg-white/90 shadow-lg rounded-xl p-6">
+        <p className="text-lg font-semibold text-black">Question {index + 1}</p>
+        <p className="text-black">{q.text}</p>
+        {q.type === "multiple-choice" && Array.isArray(q.options) && (
+  <ul className="list-disc ml-5 mt-2">
+    {q.options.map((option, idx) => {
+      const optionLetter = String.fromCharCode(65 + idx);
+      return (
+        <li key={idx} className="text-black">
+          {optionLetter}. {option}
+        </li>
+      );
+    })}
+  </ul>
+)}
+        {Object.entries(responses).map(([personaId, answers]) => {
+          // Lookup the demographic info from the personas state
+          const persona = personas[personaId];
+          return (
+            <div key={personaId} className="mt-3 p-3 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-2">
+                <FaUser className="text-blue-500" />
+                <div>
+                  <p className="font-semibold text-black">
+                    {`Persona ${parseInt(personaId, 10) + 1}`}
+                  </p>
+                  {persona ? (
+                    <p className="text-sm text-gray-600">
+                      {persona.age} | {persona.gender} | {persona.race}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-600">No demographic info available</p>
+                  )}
+                </div>
+              </div>
+              <p className="text-green-700 flex items-center gap-2 mt-2">
+                <FaRobot /> {answers[q.text] || "Generating..."}
+              </p>
+            </div>
+          );
+        })}
+      </li>
+    ))}
+  </ul>
+</div>
 
       </div>
 
-      {/* Generate AI Responses Button */}
-      <button
-        onClick={handleGenerateResponses}
-        className={`mt-4 bg-blue-500 text-white px-4 py-2 rounded ${
-          generating ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-        disabled={generating}
-      >
-        
-        {generating ? "Generating AI Responses..." : "Generate AI Responses"}
-      </button>
-      {/* Export Responses to Excel Button */}
-      <button
-  onClick={() => exportResponsesToExcel(responses, personas)}
-  className="mt-4 ml-4 bg-green-500 text-white px-4 py-2 rounded"
->
-  📥 Download Excel
-      </button>
-      <Link href="/surveys">
-      <button
-  onClick={() => downloadCodebook(survey)}
-  className="mt-4 ml-4 bg-purple-500 text-white px-4 py-2 rounded"
->
-  📖 Get Codebook
-</button>
-    <button className="mt-4 ml-4  bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-      ⬅️ Back to Surveys
-    </button>
-      </Link>
-      <br></br>
-      <br></br>
       
-
-
-      {/* Survey Questions and Responses */}
-      <h2 className="text-xl font-semibold mb-2">Questions:</h2>
-      <ul className="space-y-4">
-        {survey.questions.map((q: any, index: number) => (
-          <li key={index} className="border p-4 rounded">
-            <p className="text-lg font-semibold">Question {index + 1}</p>
-            <p className="text-white-800">{q.text}</p>
-            {Object.entries(responses).map(([personaId, answers]) => {
-  const persona = personas[personaId] || {}; // Get corresponding persona
-  
-  return (
-    <div key={personaId} className="mt-2">
-      <p className="font-semibold text-white">
-  🧑 Persona {parseInt(personaId) + 1}:{" "}
-  <span className="text-sm text-gray-400">
-    {persona.age && persona.gender
-      ? `${persona.age} years old, ${persona.gender}, ${persona.race}, ${persona.income}`
-      : "No persona data available"}
-  </span>
-</p>
-      <p className="text-blue-700">🤖: {answers[q.text] || "Generating..."}</p>
-    </div>
-  );
-})}
-          </li>
-        ))}
-      </ul>
 
     </main>
   );
