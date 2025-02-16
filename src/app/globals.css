@@ -7,3 +7,76 @@ body {
   @apply bg-primary text-textPrimary;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* How It Works Section - Unique Styling */
+.how-it-works-box {
+  border-radius: 12px;
+  box-shadow: 8px 8px 0px #16a34a, 12px 12px 0px rgba(0, 0, 0, 0.2);
+  position: relative;
+  padding: 2rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 4px solid #16a34a;
+}
+
+.how-it-works-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 10px 10px 0px #16a34a, 14px 14px 0px rgba(0, 0, 0, 0.3);
+}
+
+/* Pixelated Corners for Retro Look */
+.how-it-works-box:before,
+.how-it-works-box:after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+}
+
+.how-it-works-box:before {
+  top: -8px;
+  left: -8px;
+}
+
+.how-it-works-box:after {
+  bottom: -8px;
+  right: -8px;
+}
+/* About Box Styling */
+.about-box {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 6px 6px 0px #16a34a, 10px 10px 0px rgba(0, 0, 0, 0.2);
+  position: relative;
+  padding: 2rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: 4px solid #16a34a;
+}
+
+.about-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 8px 8px 0px #0f8a38, 12px 12px 0px rgba(0, 0, 0, 0.3);
+}
+
+/* Founder Card Styling */
+.founder-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 6px 6px 0px #16a34a, 8px 8px 0px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease-in-out;
+}
+
+.founder-card:hover {
+  transform: scale(1.05);
+}
+
+/* Placeholder Founder Image */
+.founder-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto;
+  background: #16a34a;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+}

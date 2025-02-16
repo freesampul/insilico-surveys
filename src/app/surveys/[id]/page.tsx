@@ -44,9 +44,16 @@ export default function SurveyDetailPage() {
     };
   }>({});
 
+
+  //Calculate token cost of survey responses.
   useEffect(() => {
-    setTokenCost(numRespondents * 5);
-  }, [numRespondents]);
+    if (!survey?.questions) return;
+  
+    const totalResponses = numRespondents * survey.questions.length;
+    const calculatedCost = Math.ceil(totalResponses / 7.5); 
+  
+    setTokenCost(calculatedCost);
+  }, [numRespondents, survey?.questions.length]); 
 
   useEffect(() => {
     if (!id) return;
@@ -346,7 +353,7 @@ setPersonas(fetchedPersonas);
     <button
       onClick={handleGenerateResponses}
       disabled={generating}
-      className={`bg-blue-500 text-black flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-blue-600 transition ${
+      className={`bg-blue-500 text-white flex items-center gap-2 px-5 py-3 rounded-lg hover:bg-blue-600 transition ${
         generating ? "opacity-50 cursor-not-allowed" : ""
       }`}
     >
@@ -445,8 +452,9 @@ setPersonas(fetchedPersonas);
                 </div>
               </div>
               <p className="text-green-700 flex items-center gap-2 mt-2">
-                <FaRobot /> {answers[q.text] || "Generating..."}
-              </p>
+            <FaRobot className="text-2xl text-green-500 flex-shrink-0 w-6 h-6" /> 
+            {answers[q.text] || "Generating..."}
+            </p>
             </div>
           );
         })}

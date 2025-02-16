@@ -6,6 +6,7 @@ import { signOut } from "firebase/auth"; // Firebase sign-out method
 import { auth } from "../../utils/firebase.utils"; // Import auth from utils
 import Link from "next/link"; // Link for routing between pages
 import { usePathname } from "next/navigation"; // Import usePathname to get the current path
+import { FaCoins } from "react-icons/fa"; // Import token icon
 
 const Navbar = () => {
     const { user, tokens, loading } = useAuth(); // Get the user and tokens from context
@@ -30,32 +31,40 @@ const Navbar = () => {
     }
 
     return (
-        <nav className="bg-[#f5ebe0] p-4 flex justify-center items-center shadow-md border-b border-[#e4dacd]">
-            <div className="text-black text-center">
-                <h1 className="text-xl font-bold">nsilico</h1>
+        <nav className="bg-[#f5ebe0] p-4 flex items-center justify-between shadow-md border-b border-[#e4dacd] relative">
+            {/* Left Side: Logo */}
+            <div className="text-black font-bold text-xl">nsilico</div>
+
+            {/* Center: Navigation Links */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex space-x-6">
+                <NavItem href="/" pathname={pathname}>Home</NavItem>
+                <NavItem href="/tokens" pathname={pathname}>Tokens</NavItem>
+                <NavItem href="/surveys" pathname={pathname}>Surveys</NavItem>
+                <NavItem href="/about" pathname={pathname}>About</NavItem>
             </div>
-            <div className="flex items-center space-x-6 ml-10">
-                <NavItem href="/" pathname={pathname}>home</NavItem>
-                <NavItem href="/tokens" pathname={pathname}>tokens</NavItem>
-                <NavItem href="/surveys" pathname={pathname}>surveys</NavItem>
+
+            {/* Right Side: User Section */}
+            <div className="flex items-center space-x-3">
                 {user ? (
                     <div className="relative">
+                        {/* Username + Token Count */}
                         <button
                             onClick={() => setShowDropdown(!showDropdown)} // Toggle dropdown visibility
-                            className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all"
+                            className="text-black font-semibold px-3 py-1 rounded-md hover:bg-black hover:text-white transition-all flex items-center gap-2"
                         >
-                            welcome, {user.displayName}!
+                            {user.displayName}
+                            <FaCoins className="text-yellow-500 text-lg" />
+                            <span className="font-bold text-black">{tokens}</span>
                         </button>
+
+                        {/* Sign Out Dropdown - Positioned Below */}
                         {showDropdown && (
-                            <div className="absolute right-0 mt-2 bg-[#d6ccc2] text-black rounded-lg shadow-lg w-40">
-                                <div className="p-2 text-sm">
-                                    <p className="text-black">Tokens: {tokens}</p>
-                                </div>
+                            <div className="absolute right-0 top-full mt-2 bg-[#d6ccc2] text-black rounded-lg shadow-lg w-40">
                                 <button
                                     onClick={handleSignOut} // Handle sign-out
                                     className="w-full text-left p-2 hover:bg-[#e4dacd] rounded-lg"
                                 >
-                                    sign out
+                                    Sign Out
                                 </button>
                             </div>
                         )}
@@ -69,7 +78,7 @@ const Navbar = () => {
 };
 
 // Reusable Nav Item with active page highlighting
-const NavItem = ({ href, pathname, children }) => {
+const NavItem = ({ href, pathname, children }: { href: string, pathname: string, children: React.ReactNode }) => {
     const isActive = pathname === href;
     
     return (
