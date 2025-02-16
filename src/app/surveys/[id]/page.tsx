@@ -13,13 +13,24 @@ import { useParams } from "next/navigation";
 import { FaUser, FaRobot, FaDownload, FaBook, FaArrowLeft } from "react-icons/fa";
 
 
+interface SurveyQuestion {
+  text: string;
+  type: "multiple-choice" | "short-answer"; 
+  options?: string[]; // Only available for multiple-choice questions
+}
+
+interface Survey {
+  id: string;
+  title: string;
+  questions: SurveyQuestion[];
+}
 
 export default function SurveyDetailPage() {
   const { user, tokens } = useAuth(); // Get the user and tokens from context
 
   const { id } = useParams();
   const [tokenCost, setTokenCost] = useState(1);
-  const [survey, setSurvey] = useState<any>(null);
+  const [survey, setSurvey] = useState<Survey | null>(null);
   const [numRespondents, setNumRespondents] = useState(100);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -45,7 +56,7 @@ export default function SurveyDetailPage() {
   }>({});
 
 
-  //Calculate token cost of survey responses.
+  //Calculate token cost of 
   useEffect(() => {
     if (!survey?.questions) return;
   
@@ -64,7 +75,7 @@ export default function SurveyDetailPage() {
         const docSnap = await getDoc(docRef);
   
         if (docSnap.exists()) {
-          setSurvey({ id: docSnap.id, ...docSnap.data() });
+          setSurvey({ id: docSnap.id, title: docSnap.data().title, questions: docSnap.data().questions });
   
           // ✅ Fetch AI-generated responses from Firestore
           const responsesCollection = collection(docRef, "responses");
@@ -228,7 +239,7 @@ setPersonas(fetchedPersonas);
           
           // Get the answer text by looking up the choice letter in the question options
           const answerText = questionObj 
-            ? questionObj.options[resp.answer.charCodeAt(0) - 65] // Convert 'A' -> 0, 'B' -> 1, etc.
+            ? questionObj.options?.[resp.answer.charCodeAt(0) - 65] ?? "Unknown" // Convert 'A' -> 0, 'B' -> 1, etc.
             : "Unknown";
 
           return `- Q: "${resp.question}"\n  A: "${answerText}"`;

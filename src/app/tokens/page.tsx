@@ -64,7 +64,7 @@ export default function TokensPage() {
     updateTokensAfterPurchase();
   }, [user, updating]);
 
-  const handleBuyTokens = async (productId) => {
+  const handleBuyTokens = async (productId: string) => {
     try {
       if (!user) throw new Error("User must be signed in to purchase tokens.");
       await ensureUserDocExists(user.uid, user.email);

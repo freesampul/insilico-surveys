@@ -9,7 +9,7 @@ import { FaPlus, FaEye } from "react-icons/fa"; // Import icons for buttons
 
 export default function SurveysPage() {
   const { user } = useAuth();
-  const [surveys, setSurveys] = useState([]);
+  const [surveys, setSurveys] = useState<{ id: string; title: string; createdAt?: { seconds: number } }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +21,7 @@ export default function SurveysPage() {
         const querySnapshot = await getDocs(q);
         const fetchedSurveys = querySnapshot.docs.map((doc) => ({
           id: doc.id,
+          title: doc.data().title,
           ...doc.data(),
         }));
         setSurveys(fetchedSurveys);
@@ -67,7 +68,7 @@ export default function SurveysPage() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">{survey.title}</h2>
                 <p className="text-gray-600 text-sm">
-                  Created on: {new Date(survey.createdAt?.seconds * 1000).toLocaleDateString()}
+                  Created on: {new Date(survey.createdAt?.seconds ?? 0 * 1000).toLocaleDateString()}
                 </p>
               </div>
               <Link href={`/surveys/${survey.id}`}>
