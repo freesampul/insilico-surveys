@@ -110,6 +110,7 @@ responsesSnapshot.forEach((responseDoc) => {
       personality: data.persona?.personality || { extremeAnswers: [] },
     };
   }
+  personaIndex++;
 });
 
 setResponses(fetchedResponses);
