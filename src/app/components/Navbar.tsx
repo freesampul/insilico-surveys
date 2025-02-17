@@ -40,7 +40,6 @@ const Navbar = () => {
                 <NavItem href="/" pathname={pathname}>Home</NavItem>
                 <NavItem href="/tokens" pathname={pathname}>Tokens</NavItem>
                 <NavItem href="/surveys" pathname={pathname}>Surveys</NavItem>
-                <NavItem href="/about" pathname={pathname}>About</NavItem>
             </div>
 
             {/* Right Side: User Section */}
