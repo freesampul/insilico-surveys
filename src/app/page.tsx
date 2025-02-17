@@ -47,13 +47,13 @@ export default function AboutPage() {
   return (
     <main className="flex flex-col min-h-screen bg-[#f5ebe0] text-gray-900 font-serif items-center">
        {/* Hero Section - Centered */}
-            <section className="flex flex-col justify-center items-center text-center px-0 min-h-[30vh] mb-0">
+            <section className="flex flex-col justify-center items-center text-center px-0 min-h-[35vh] mb-0">
               <h1 className="text-6xl font-medium text-[#1a1a1a] leading-tight mb-1">
                 Get survey answers from{" "}
                 <span className="text-green-600 text-6xl">{displayedText}</span>
                 <span className="text-green-600 text-6xl animate-blink">|</span>
               </h1>
-              <p className="text-xl text-gray-700 max-w-2xl mb-1">
+              <p className="text-xl text-gray-700 max-w-2xl mb-6">
                 Accurate and diverse survey results at a fraction of the cost.
               </p>
               <SignInButton />
@@ -65,7 +65,7 @@ export default function AboutPage() {
         <div className="about-box max-w-3xl p-10 relative">
           <h2 className="text-3xl font-bold text-center mb-6">Mission</h2>
           <p className="text-lg text-black leading-relaxed text-center">
-            Before nsilico, data collection was difficult. Either you spent weeks collecting data or you paid $$$ to an online platform like Prolific or MTurk. Now, our AI-powered platform generates realistic survey responses in seconds, so you can focus on what matters most: <b>making data-driven decisions.</b>
+            Before nsilico, data collection was difficult. Either you spent weeks collecting data or you paid $$$ to an online platform like Prolific or MTurk. Now, our AI-powered platform generates realistic survey responses for cents and in seconds, so you can focus on what matters most: <b>making data-driven decisions.</b>
           </p>
         </div>
       </section>
