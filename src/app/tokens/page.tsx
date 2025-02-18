@@ -64,6 +64,7 @@ export default function TokensPage() {
     updateTokensAfterPurchase();
   }, [user, updating]);
 
+
   const handleBuyTokens = async (productId: string) => {
     try {
       if (!user) throw new Error("User must be signed in to purchase tokens.");
@@ -116,7 +117,7 @@ export default function TokensPage() {
           <div className="bg-white shadow-lg p-6 rounded-xl text-center flex flex-col items-center">
             <FaCheckCircle className="text-green-500 text-4xl mb-3" />
             <h3 className="text-2xl font-semibold text-gray-800">Basic</h3>
-            <p className="text-gray-600 mt-2">100 tokens / month</p>
+            <p className="text-gray-600 mt-2">500 tokens / month</p>
             <p className="text-xl font-bold text-green-600">$5 / month</p>
             <button onClick={() => handleBuyTokens("price_1QsYsNDT4vO9oNMHEMOrExQu")}
               className="mt-4 bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition"
@@ -129,7 +130,7 @@ export default function TokensPage() {
           <div className="bg-white shadow-lg p-6 rounded-xl text-center flex flex-col items-center">
             <FaRocket className="text-blue-500 text-4xl mb-3" />
             <h3 className="text-2xl font-semibold text-gray-800">Pro</h3>
-            <p className="text-gray-600 mt-2">250 tokens / month</p>
+            <p className="text-gray-600 mt-2">1250 tokens / month</p>
             <p className="text-xl font-bold text-green-600">$10 / month</p>
             <button onClick={() => handleBuyTokens("price_1QsYsnDT4vO9oNMHjm9I6O99")}
 
@@ -143,7 +144,7 @@ export default function TokensPage() {
           <div className="bg-white shadow-lg p-6 rounded-xl text-center flex flex-col items-center">
             <FaCoins className="text-yellow-500 text-4xl mb-3" />
             <h3 className="text-2xl font-semibold text-gray-800">Enterprise</h3>
-            <p className="text-gray-600 mt-2">1000 tokens / month</p>
+            <p className="text-gray-600 mt-2">5000 tokens / month</p>
             <p className="text-xl font-bold text-green-600">$35 / month</p>
             <button onClick={() => handleBuyTokens("price_1QsYtCDT4vO9oNMHsqVR1KBR")}
               className="mt-4 bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition"
