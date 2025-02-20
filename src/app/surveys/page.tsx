@@ -67,9 +67,7 @@ export default function SurveysPage() {
             <li key={survey.id} className="bg-[#e4dacd] shadow-md rounded-lg p-6 flex flex-col justify-between border-black-1px">
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">{survey.title}</h2>
-                <p className="text-gray-600 text-sm">
-                  Created on: {new Date(survey.createdAt?.seconds ?? 0 * 1000).toLocaleDateString()}
-                </p>
+                
               </div>
               <Link href={`/surveys/${survey.id}`}>
                 <button className="mt-4 flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition">
