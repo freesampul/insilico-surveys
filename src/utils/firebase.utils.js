@@ -5,6 +5,7 @@ import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 export const auth = getAuth(); // Export auth instance
 export const db = getFirestore(); // Export Firestore instance
 
+const YOUR_DOMAIN = process.env.NEXT_PUBLIC_SITE_URL || "https://nsilico.net"; // Ensure HTTPS
 
 /** 
  * ✅ Ensure a user's Firestore document exists and includes their email.
@@ -24,7 +25,6 @@ export const ensureUserDocExists = async (uid, email) => {
       if (!currentData.email || currentData.email !== email) {
         console.log("🔄 Updating user's email in Firestore...");
         await setDoc(userDocRef, { email }, { merge: true });
-
       }
     }
   } catch (error) {
@@ -45,10 +45,19 @@ export const startCheckoutSession = async (priceId) => {
   try {
     await ensureUserDocExists(currentUser.uid, currentUser.email); // ✅ Ensure Firestore doc exists before checkout
 
-    const response = await fetch("/api/create-checkout-session", {
+    console.log("✅ Initiating Stripe checkout session...");
+    console.log("📌 Domain:", YOUR_DOMAIN);
+    console.log("📌 Price ID:", priceId);
+
+    const response = await fetch(`${YOUR_DOMAIN}/api/create-checkout-session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId, userId: currentUser.uid }), // ✅ Use price_xxx
+      body: JSON.stringify({
+        priceId,
+        userId: currentUser.uid,
+        successUrl: `${YOUR_DOMAIN}/tokens?success=true`,
+        cancelUrl: `${YOUR_DOMAIN}/tokens?canceled=true`,
+      }),
     });
 
     if (!response.ok) {
@@ -66,12 +75,14 @@ export const startCheckoutSession = async (priceId) => {
       throw new Error("No checkout URL received from server");
     }
 
+    console.log("✅ Redirecting to:", data.url);
     window.location.href = data.url;
   } catch (error) {
     console.error("❌ Error starting checkout:", error);
     throw error;
   }
 };
+
 /**
  * ✅ Fetch a user's token balance from Firestore.
  */
@@ -103,10 +114,14 @@ export const createStripeCustomer = async (user) => {
 
     // Store the customer ID in Firestore
     const userDocRef = doc(db, "users", user.uid);
-    await setDoc(userDocRef, {
-      stripeCustomerId: data.customerId,
-      email: user.email,
-    }, { merge: true });
+    await setDoc(
+      userDocRef,
+      {
+        stripeCustomerId: data.customerId,
+        email: user.email,
+      },
+      { merge: true }
+    );
 
     return data.customerId;
   } catch (error) {
