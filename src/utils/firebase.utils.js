@@ -17,13 +17,14 @@ export const ensureUserDocExists = async (uid, email) => {
 
     if (!userSnap.exists()) {
       console.log("🚀 Creating new user document with tokens and email...");
-      await setDoc(userDocRef, { tokens: 0, email }, { merge: true });
+      await setDoc(userDocRef, { tokens: 100, email }, { merge: true });
     } else {
       // Update the email if it's missing or outdated
       const currentData = userSnap.data();
       if (!currentData.email || currentData.email !== email) {
         console.log("🔄 Updating user's email in Firestore...");
         await setDoc(userDocRef, { email }, { merge: true });
+
       }
     }
   } catch (error) {
